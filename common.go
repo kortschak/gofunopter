@@ -12,17 +12,15 @@ import (
 // (enforced on a per-iteration) basis, so may go over this limit
 // depending on the optimizer used
 type Common struct {
-	Iter     *Counter
+	Iter     *Iterations
 	FunEvals *Counter
 	Runtime  *RuntimeStruct
-	Display
 }
 
 func DefaultCommon() *Common {
-	return &Common{Iter: &Counter{Max: math.MaxInt32, Name: "iterations"},
-		FunEvals:   &Counter{Max: math.MaxInt32, Name: "function evaluations"},
-		MaxRuntime: &FloatMax{Max: math.Inf(1)},
-		Display:    DefaultDisplay(),
+	return &Common{Iter: &Iterations{Counter: &Counter{Max: math.MaxInt32, Name: "iterations"}},
+		FunEvals: &Counter{Max: math.MaxInt32, Name: "function evaluations"},
+		Runtime:  &RuntimeStruct{Max: math.MaxInt64, Name: "runtime"},
 	}
 }
 
@@ -33,24 +31,19 @@ func (c *Common) Initialize() {
 
 // Check if any of the elements of the common structure have converged
 func (c *Common) CheckConvergence() (str string) {
-	str = c.Iter.CheckConvergence()
-	if str != "" {
-		return str
-	}
-	str = c.FunEvals.CheckConvergence()
-	if str != "" {
-		return str
-	}
-	str = c.Runtime.CheckConvergence()
-	if str != "" {
-		return str
-	}
-	return ""
+	return CheckConvergence(c.Iter, c.FunEvals, c.Runtime)
 }
 
 func (c *Common) Iterate() {
-	c.Iter.Add(1)
-	c.Display.Iterate()
+	Iterate(c.Iter)
+}
+
+func (c *Common) DisplayHeadings() []string {
+	return []string{"Iter", "FunEvals"}
+}
+
+func (c *Common) DisplayValues() []string {
+	return []string{"Iter", "FunEvals"}
 }
 
 type RuntimeStruct struct {
@@ -65,6 +58,15 @@ func (r *RuntimeStruct) Initialize() {
 
 func (r *RuntimeStruct) CheckConvergence() string {
 	if time.Since(r.init).Seconds() > r.Max.Seconds() {
-		return "Maximum runtime reached"
+		return "Maximum " + r.Name + " reached"
 	}
+	return ""
+}
+
+type Iterations struct {
+	*Counter
+}
+
+func (i *Iterations) Iterate() {
+	i.Add(1)
 }

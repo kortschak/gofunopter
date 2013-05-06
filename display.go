@@ -5,12 +5,6 @@ import (
 	"time"
 )
 
-// An interface for displaying values 
-type Displayer interface {
-	DisplayHeadings() []string
-	DisplayValues() []interface{}
-}
-
 // Controls the display settings for an optimizer
 // On is a bool setting if values are displayed at all
 // Time interval is a setting for at least how many seconds should elapse between value displays
@@ -22,13 +16,27 @@ type Display struct {
 	nValueDisplays  int       // How many displays have there been since the headings were output
 	TimeInterval    float64   // How many seconds should elapse between displays
 	HeadingInterval int       // How many value outputs between displays
-	D               Displayer
+	headings        []string
+	values          []interface{}
+	//D               Displayer
 	//TODO: Add in something about the column widths
 }
 
 // Returns the default settings for the display parameters
 func DefaultDisplay() *Display {
 	return &Display{DisplayOn: true, TimeInterval: 0.7, HeadingInterval: 30}
+}
+
+func (d *Display) Display() *Display {
+	return d
+}
+
+func (d *Display) SetHeadings(s []string) {
+	d.headings = s
+}
+
+func (d *Display) SetValues(v []interface{}) {
+	d.values = v
 }
 
 // Iterate the display. Checks to see if the columns or values should be displayed
@@ -51,20 +59,16 @@ func (d *Display) Iterate() {
 
 // Display the headings returned by the displayer
 func (d *Display) Headings() {
-	headings := d.D.DisplayHeadings()
 	fmt.Print("\n")
-	for _, val := range headings {
+	for _, val := range d.headings {
 		fmt.Print(val)
 		fmt.Print("\t")
 	}
 	fmt.Print("\n")
-	// Column widths part would go here
-
 }
 
 func (d *Display) Values() {
-	vals := d.D.DisplayValues()
-	for _, val := range vals {
+	for _, val := range d.values {
 		switch val.(type) {
 		case int:
 			fmt.Printf("%d", val)
