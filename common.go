@@ -12,9 +12,10 @@ import (
 // (enforced on a per-iteration) basis, so may go over this limit
 // depending on the optimizer used
 type Common struct {
-	Iter     *Iterations
-	FunEvals *Counter
-	Runtime  *RuntimeStruct
+	Iter        *Iterations
+	FunEvals    *Counter
+	Runtime     *RuntimeStruct
+	convergence string
 }
 
 func DefaultCommon() *Common {
@@ -46,10 +47,30 @@ func (c *Common) DisplayValues() []string {
 	return []string{"Iter", "FunEvals"}
 }
 
+func (c *Common) Result() *CommonResult {
+	return &CommonResult{
+		TotalRuntime:    time.Since(c.Runtime.Start()),
+		TotalIter:       c.Iter.Curr(),
+		TotalFunEvals:   c.FunEvals.Curr(),
+		ConvergenceType: c.convergence,
+	}
+}
+
+type CommonResult struct {
+	TotalRuntime    time.Duration
+	TotalIter       int
+	TotalFunEvals   int
+	ConvergenceType string
+}
+
 type RuntimeStruct struct {
 	Max  time.Duration
 	init time.Time
 	Name string
+}
+
+func (r *RuntimeStruct) Start() time.Time {
+	return r.init
 }
 
 func (r *RuntimeStruct) Initialize() {
