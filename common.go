@@ -25,6 +25,10 @@ func DefaultCommon() *Common {
 	}
 }
 
+func (c *Common) Common() *Common {
+	return c
+}
+
 // Initialize the common structure at the start of a run.
 func (c *Common) Initialize() {
 	c.Runtime.Initialize()
