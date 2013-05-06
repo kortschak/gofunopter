@@ -17,7 +17,7 @@ type Displayer interface {
 // HeadingInterval sets how many value displays happen between reprinting the columns
 // D is a displayer which (usually) should be set by the optimization algorithm, though customizations are possible
 type Display struct {
-	IsOn            bool
+	DisplayOn       bool
 	lastValueTime   time.Time // When was the last real time the values were displayed
 	nValueDisplays  int       // How many displays have there been since the headings were output
 	TimeInterval    float64   // How many seconds should elapse between displays
@@ -28,12 +28,12 @@ type Display struct {
 
 // Returns the default settings for the display parameters
 func DefaultDisplay() *Display {
-	return &Display{IsOn: true, TimeInterval: 0.7, HeadingInterval: 30}
+	return &Display{DisplayOn: true, TimeInterval: 0.7, HeadingInterval: 30}
 }
 
 // Iterate the display. Checks to see if the columns or values should be displayed
 func (d *Display) Iterate() {
-	if !d.IsOn {
+	if !d.DisplayOn {
 		return // Display is off, don't do anything
 	}
 	// First, check if the headings need to be set
