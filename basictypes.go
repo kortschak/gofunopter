@@ -1,16 +1,47 @@
 package gofunopter
 
-// An interface for displaying values 
-type Displayer interface {
+// Something which can display values
+type Displayable interface {
 	DisplayHeadings() []string
 	DisplayValues() []interface{}
+	//Display() *Display
+}
+
+type Displayer interface {
+	Displayable
 	Display() *Display
 }
 
-func SetDisplay(displayer Displayer) {
-	disp := displayer.Display()
-	disp.SetHeadings(displayer.DisplayHeadings())
-	disp.SetValues(displayer.DisplayValues())
+func SetDisplayMethods(displayer Displayer) {
+	d := displayer.Display()
+	d.GetHeadings = displayer.DisplayHeadings
+	d.GetValues = displayer.GetHeadings
+}
+
+func SetDisplay(displayable Displayable) {
+	disp := displayable.Display()
+	disp.SetHeadings(displayable.DisplayHeadings())
+	disp.SetValues(displayable.DisplayValues())
+}
+
+func AppendValues(values []interface{}, displayables ...Displayable) []interface{} {
+	for _, displayable := range displayables {
+		newValues := displayable.DisplayValues()
+		for _, val := range newValues {
+			values = append(currVals, val)
+		}
+	}
+	return values
+}
+
+func AppendHeadings(headings []string, displayables ...Displayable) []string {
+	for _, displayable := range displayables {
+		headings := displayable.DisplayHeadings()
+		for _, val := range newHeadings {
+			headings := append(headings, val)
+		}
+	}
+	return headings
 }
 
 type Iterator interface {
@@ -59,6 +90,7 @@ func (c *Counter) Curr() int {
 	return c.curr
 }
 
+/*
 // Store the history of a float
 type HistoryFloat struct {
 	Save bool
@@ -105,3 +137,4 @@ func (f *HistoryFloatSlice) Add(val []float) {
 func (f *HistoryFloatSlice) Get() [][]float64 {
 	return f.hist
 }
+*/

@@ -10,18 +10,6 @@ package gofunopter
 
 // Basic problem types
 
-// Single input single output
-type SISO interface {
-	InputFloat
-	OutputFloat
-}
-
-// Gradient based SISO
-type SISOGradBased interface {
-	SISO
-	GradientFloat
-}
-
 // General pattern is to have Eval() which evaluates everything at a point, and the type should
 // cache the result. Obj() then returns that cache result. I'm not sure if we should have
 // specific functions for certain parts, such as EvalObj(), EvalConstraints(), and EvalGrad()
@@ -29,7 +17,7 @@ type SISOGradBased interface {
 
 // InputFloat is a type that can evaluate the objective at for a single real objective
 type InputFloat interface {
-	Eval(float64)
+	Eval(float64) error
 }
 
 // Single input is a type that can evaluate the objective for a multiple input vector

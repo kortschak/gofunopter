@@ -16,13 +16,16 @@ type Common struct {
 	FunEvals    *Counter
 	Runtime     *RuntimeStruct
 	convergence string
+	Display
 }
 
 func DefaultCommon() *Common {
-	return &Common{Iter: &Iterations{Counter: &Counter{Max: math.MaxInt32, Name: "iterations"}},
+	c := &Common{Iter: &Iterations{Counter: &Counter{Max: math.MaxInt32, Name: "iterations"}},
 		FunEvals: &Counter{Max: math.MaxInt32, Name: "function evaluations"},
 		Runtime:  &RuntimeStruct{Max: math.MaxInt64, Name: "runtime"},
 	}
+	SetDisplayMethods(c)
+	return c
 }
 
 func (c *Common) Common() *Common {
@@ -40,7 +43,7 @@ func (c *Common) CheckConvergence() (str string) {
 }
 
 func (c *Common) Iterate() {
-	Iterate(c.Iter)
+	Iterate(c.Iter, c.Display)
 }
 
 func (c *Common) DisplayHeadings() []string {

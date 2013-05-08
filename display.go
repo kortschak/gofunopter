@@ -18,6 +18,8 @@ type Display struct {
 	HeadingInterval int       // How many value outputs between displays
 	headings        []string
 	values          []interface{}
+	GetHeadings     func() []string
+	GetValues       func() []interface{}
 	//D               Displayer
 	//TODO: Add in something about the column widths
 }
@@ -31,6 +33,7 @@ func (d *Display) Display() *Display {
 	return d
 }
 
+/*
 func (d *Display) SetHeadings(s []string) {
 	d.headings = s
 }
@@ -38,12 +41,15 @@ func (d *Display) SetHeadings(s []string) {
 func (d *Display) SetValues(v []interface{}) {
 	d.values = v
 }
+*/
 
 // Iterate the display. Checks to see if the columns or values should be displayed
 func (d *Display) Iterate() {
 	if !d.DisplayOn {
 		return // Display is off, don't do anything
 	}
+	d.headings = d.GetHeadings()
+	d.values = d.GetValues()
 	// First, check if the headings need to be set
 	if d.nValueDisplays >= d.HeadingInterval {
 		d.Headings()
