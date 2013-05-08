@@ -59,8 +59,49 @@ func (c *Counter) Curr() int {
 	return c.curr
 }
 
-type FloatTol struct {
-	Name string
-	Tol  float64
-	curr float64
+// Store the history of a float
+type HistoryFloat struct {
+	Save bool
+	hist []float64 // Should this be exposed? Don't really want things messing with it...
+}
+
+func DefaultHistoryFloat() *HistoryFloat {
+	// Zero length to save memory
+	// default save is false
+	return &HistoryFloat{hist: make([]float64, 0)}
+}
+
+func (f *HistoryFloat) Add(val float) {
+	if f.Save {
+		f.hist = append(f.hist, val)
+	}
+}
+
+func (f *FloatHistory) Get() []float64 {
+	return f.hist
+}
+
+// Store the history of a float
+type HistoryFloatSlice struct {
+	Save bool
+	hist [][]float64 // Should this be exposed? Don't really want things messing with it...
+}
+
+func DefaultHistoryFloatSlice() *HistoryFloatSlice {
+	// Zero length to save memory
+	// default save is false
+	return &HistoryFloatSlice{hist: make([][]float64, 0)}
+}
+
+func (f *HistoryFloatSlice) Add(val []float) {
+	// Copy it in case the slice changes in the future
+	newSlice := make([]float64, len(val))
+	copy(newSlice, val)
+	if f.Save {
+		f.hist = append(f.hist, newSlice)
+	}
+}
+
+func (f *HistoryFloatSlice) Get() [][]float64 {
+	return f.hist
 }
