@@ -6,6 +6,26 @@ import (
 	"time"
 )
 
+func AppendValues(values []interface{}, displayables ...Displayable) []interface{} {
+	for _, displayable := range displayables {
+		newValues := displayable.DisplayValues()
+		for _, val := range newValues {
+			values = append(values, val)
+		}
+	}
+	return values
+}
+
+func AppendHeadings(headings []string, displayables ...Displayable) []string {
+	for _, displayable := range displayables {
+		newHeadings := displayable.DisplayHeadings()
+		for _, val := range newHeadings {
+			headings = append(headings, val)
+		}
+	}
+	return headings
+}
+
 // Something which can display values
 type Displayable interface {
 	DisplayHeadings() []string
