@@ -10,10 +10,10 @@ import (
 
 type Cubic struct {
 	// Basic values
-	Loc  *OptFloat     // Location
-	Obj  *OptFloat     // Function Value
-	Grad *OptFloat     // Gradient value
-	Step *BoundedFloat // Step size
+	Loc  *LocationFloat  // Location
+	Obj  *ObjectiveFloat // Function Value
+	Grad *GradientFloat  // Gradient value
+	Step *BoundedFloat   // Step size
 	*Common
 	Fun SISOGradBasedProblem
 
@@ -32,7 +32,7 @@ type Cubic struct {
 
 func DefaultCubic() *Cubic {
 	c := &Cubic{
-		Loc:             DefaultInputFloat(),
+		Loc:             DefaultLocationFloat(),
 		Obj:             DefaultObjectiveFloat(),
 		Grad:            DefaultGradientFloat(),
 		Step:            DefaultStepFloat(),

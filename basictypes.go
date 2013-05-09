@@ -2,8 +2,11 @@ package gofunopter
 
 import (
 	"fmt"
+	"github.com/btracey/smatrix"
 	"math"
 )
+
+//TODO: Be more careful with resetting and error checking during optimization
 
 var _ = fmt.Println
 
@@ -166,46 +169,66 @@ func (o *OptFloat) DisplayValues() []interface{} {
 
 // Returns the default values for an input location
 // Locations don't have any tolerances
-func DefaultInputFloat() *OptFloat {
-	return &OptFloat{
-		AbsTol:   math.Inf(-1),
-		RelTol:   math.Inf(-1),
-		Name:     "loc",
-		SaveHist: false,
-		Init:     0,
-		Disp:     true,
-		Hist:     &HistoryFloat{},
+
+type LocationFloat struct {
+	*OptFloat
+}
+
+func DefaultLocationFloat() *LocationFloat {
+	return &LocationFloat{
+		OptFloat: &OptFloat{
+			AbsTol:   math.Inf(-1),
+			RelTol:   math.Inf(-1),
+			Name:     "loc",
+			SaveHist: false,
+			Init:     0,
+			Disp:     true,
+			Hist:     &HistoryFloat{},
+		},
 	}
 }
 
 // Returns the default values for an objective
 // Objectives generally don't have any tolerances
 // No idea what the initial function value is
-func DefaultObjectiveFloat() *OptFloat {
-	o := &OptFloat{
-		AbsTol:   math.Inf(-1),
-		RelTol:   math.Inf(-1),
-		Name:     "fun",
-		SaveHist: false,
-		Init:     math.NaN(),
-		Curr:     math.NaN(),
-		Disp:     true,
-		Hist:     &HistoryFloat{},
+
+type ObjectiveFloat struct {
+	*OptFloat
+}
+
+func DefaultObjectiveFloat() *ObjectiveFloat {
+	o := &ObjectiveFloat{
+		OptFloat: &OptFloat{
+			AbsTol:   math.Inf(-1),
+			RelTol:   math.Inf(-1),
+			Name:     "fun",
+			SaveHist: false,
+			Init:     math.NaN(),
+			Curr:     math.NaN(),
+			Disp:     true,
+			Hist:     &HistoryFloat{},
+		},
 	}
 	return o
 }
 
+type GradientFloat struct {
+	*OptFloat
+}
+
 // Returns the default values for the gradient
-func DefaultGradientFloat() *OptFloat {
-	return &OptFloat{
-		AbsTol:   1E-6,
-		RelTol:   1E-8,
-		Name:     "grad",
-		SaveHist: false,
-		Init:     math.NaN(),
-		Curr:     math.NaN(),
-		Disp:     true,
-		Hist:     &HistoryFloat{},
+func DefaultGradientFloat() *GradientFloat {
+	return &GradientFloat{
+		OptFloat: &OptFloat{
+			AbsTol:   1E-6,
+			RelTol:   1E-8,
+			Name:     "grad",
+			SaveHist: false,
+			Init:     math.NaN(),
+			Curr:     math.NaN(),
+			Disp:     true,
+			Hist:     &HistoryFloat{},
+		},
 	}
 }
 
@@ -273,5 +296,117 @@ func DefaultStepFloat() *BoundedFloat {
 		Lb:         math.Inf(-1),
 		Ub:         math.Inf(1),
 		DispBounds: false,
+	}
+}
+
+// Something about only major iterations?
+type HistoryFloatSlice struct {
+	hist [][]float64
+	Save bool
+}
+
+func (h *HistoryFloatSlice) Get() [][]float64 {
+	return h.hist
+}
+
+func (h *HistoryFloatSlice) Set(val [][]float64) {
+	h.hist = val
+}
+
+func (h *HistoryFloatSlice) Add(val []float64) {
+	// Make a copy in case the pointer changes
+	if h.Save {
+		newVal := make([]float64, len(val))
+		copy(newVal, val)
+		h.hist = append(h.hist, newVal)
+	}
+}
+
+// A float type which can check tolerances, initialize and save history
+type OptFloatSlice struct {
+	Curr     []float64          // current value of the float
+	Init     []float64          // initial value of the float
+	norminit float64            // The norm of the initial point
+	Hist     *HistoryFloatSlice // stored history of the float
+	AbsTol   float64            // Tolerance on the norm of the value
+	SaveHist bool               // Do you want to save the history. Called save because maybe we want to have a save to file in the future
+	RelTol   float64            // Tolerance relative to the norm of the initial value
+	Name     string             // Name of the OptFloat
+	Opt      []float64          // Optimal value at the end of the run
+	Disp     bool               // Display this output during teh run if display is on 
+}
+
+// Initializes by setting the current value to the initial value and
+// appending it to the history if necessary
+func (o *OptFloatSlice) Initialize() {
+	newInit := make([]float64, len(o.Curr))
+	o.Curr = newInit
+	o.norminit = smatrix.VectorTwoNorm(o.Init)
+	if o.Hist.Get() == nil {
+		o.Hist.Set(make([][]float64, 0))
+	}
+	if o.Hist.Save {
+		o.Hist.Add(newInit)
+	}
+
+}
+
+// Make hist return a copy? Have a CopyHist method?
+
+func (o *OptFloatSlice) Converged() string {
+	norm := smatrix.VectorTwoNorm(o.Curr)
+	if norm < o.AbsTol {
+		return o.Name + " absolute tolerance reached"
+	}
+	if norm/o.norminit < o.RelTol {
+		return o.Name + " relative tolerance reached"
+	}
+	return ""
+}
+
+func (o *OptFloatSlice) Result() {
+	o.Opt = o.Curr
+}
+
+func (o *OptFloatSlice) DisplayHeadings() []string {
+	return []string{o.Name}
+}
+
+func (o *OptFloatSlice) DisplayValues() []interface{} {
+	return []interface{}{smatrix.VectorTwoNorm(o.Curr)}
+}
+
+type LocationFloatSlice struct {
+	*OptFloatSlice
+}
+
+func DefaultLocationFloatSlice() *LocationFloatSlice {
+	return &LocationFloatSlice{
+		OptFloatSlice: &OptFloatSlice{
+			AbsTol:   math.Inf(-1),
+			RelTol:   math.Inf(-1),
+			Name:     "loc",
+			SaveHist: false,
+			Disp:     true,
+			Hist:     &HistoryFloatSlice{},
+		},
+	}
+}
+
+type GradientFloatSlice struct {
+	*OptFloatSlice
+}
+
+// Returns the default values for the gradient
+func DefaultGradientFloatSlice() *GradientFloatSlice {
+	return &GradientFloatSlice{
+		OptFloatSlice: &OptFloatSlice{
+			AbsTol:   1E-6,
+			RelTol:   1E-8,
+			Name:     "grad",
+			SaveHist: false,
+			Disp:     true,
+			Hist:     &HistoryFloatSlice{},
+		},
 	}
 }
