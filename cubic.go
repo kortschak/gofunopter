@@ -1,4 +1,4 @@
-package gofunopt
+package gofunopter
 
 import (
 	"fmt"
@@ -10,11 +10,12 @@ import (
 
 type Cubic struct {
 	// Basic values
-	Loc  *OptFloat // Location
-	Obj  *OptFloat // Function Value
-	Grad *OptFloat // Gradient value
-	Step *OptFloat // Step size
+	Loc  *OptFloat  // Location
+	Obj  *OptFloat  // Function Value
+	Grad *OptFloat  // Gradient value
+	Step *StepFloat // Step size
 	*Common
+	Fun SISOGradBasedProblem
 
 	// Tunable parameters
 	StepDecreaseMin float64 // Minimum allowable decrease (must be a number between [0,1)) default 0.0001
@@ -27,7 +28,6 @@ type Cubic struct {
 	currStepDirectionPositive bool
 	initialGradNegative       bool
 	deltaCurrent              float64
-	fun                       SISOProblem
 }
 
 func DefaultCubic() *Cubic {
@@ -47,26 +47,28 @@ func DefaultCubic() *Cubic {
 }
 
 // Should we add error checking to the evaluations?
-func (c *Cubic) Initialize(fun SISOOptimizable) (err error) {
+func (c *Cubic) Initialize() (err error) {
 	// Initialize takes all of these in so function evaluations can be saved if 
 	// the information is already there
+	c.Common.Initialize()
 	c.Loc.Initialize()
-	if math.IsNaN(f.Curr()) {
+	if math.IsNaN(c.Obj.Curr) {
 		// Initial function value hasn't been set, so do it.
-		err = fun.Eval(x.Curr())
+		err = c.Fun.Eval(c.Loc.Curr)
 		if err != nil {
-			return fmt.Errorf("Error evaluating the function at the set initial value %v", x.Curr())
+			return fmt.Errorf("Error evaluating the function at the set initial value %v", c.Loc.Curr)
 		}
-		c.Obj.Init = fun.Obj()
-		c.Grad.Init = fun.Grad()
+		c.FunEvals.Add(1)
+		c.Obj.Init = c.Fun.Obj()
+		c.Grad.Init = c.Fun.Grad()
 	}
 	c.Obj.Initialize()
 	c.Grad.Initialize()
-	if step.Init <= 0 {
+	if c.Step.Init <= 0 {
 		return fmt.Errorf("Initial step must be positive")
 	}
 	c.Step.Initialize()
-	c.initialGradNegative = (c.Grad.Curr() < 0)
+	c.initialGradNegative = (c.Grad.Curr < 0)
 	c.currStepDirectionPositive = true
 	c.deltaCurrent = 0.0 // How far is the current point from the initial point
 
@@ -74,14 +76,17 @@ func (c *Cubic) Initialize(fun SISOOptimizable) (err error) {
 	return nil
 }
 
-func (c *Cubic) CheckConvergence() string {
-	str := CheckConvergence(c.Loc, c.Obj, c.Grad, c.Step)
+func (c *Cubic) Converged() string {
+	str := Converged(c.Loc, c.Obj, c.Grad, c.Step)
 	if str != "" {
 		return str
 	}
-	_, ok = c.fun.(Converger)
+	s, ok := c.Fun.(Converger)
 	if ok {
-		str := CheckConvergence(c.fun)
+		str := s.Converged()
+		if str != "" {
+			return str
+		}
 	}
 	return ""
 }
@@ -90,9 +95,9 @@ func (c *Cubic) DisplayHeadings() []string {
 	headings := make([]string, 10)
 	headings = AppendHeadings(headings, c.Common)
 	headings = append(headings, "Grad", "StepSize")
-	_, ok = c.fun.(Displayer)
+	s, ok := c.Fun.(Displayer)
 	if ok {
-		headings = AppendHeadings(headings, fun)
+		headings = AppendHeadings(headings, s)
 	}
 	return headings
 }
@@ -100,80 +105,91 @@ func (c *Cubic) DisplayHeadings() []string {
 func (c *Cubic) DisplayValues() []interface{} {
 	values := make([]interface{}, 10)
 	values = AppendValues(values, c.Common)
-	values = append(values, c.g.Curr(), c.step.Curr())
-	_, ok = c.fun.(Displayer)
+	values = append(values, c.Grad.Curr, c.Step.Curr)
+	s, ok := c.Fun.(Displayer)
 	if ok {
-		values = AppendValues(values, fun)
+		values = AppendValues(values, s)
 	}
-	return a
+	return values
 }
 
-func (c *Cubic) Optimize(fun SISOOptimizable) (r SISOResult, err error) {
-	err = c.Initialize(fun)
+func (c *Cubic) Result() {
+	SetResults(c.Common, c.Loc, c.Obj, c.Grad, c.Step)
+}
+
+type CubicResult struct {
+	StepHist []float64
+}
+
+func (c *Cubic) Optimize() (str string, err error) {
+	// Add in some check about nil pointers and such
+	err = c.Initialize()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
+	// Want to return the result even if there is an error in case anything
+	// gets lost (maybe a defer would be even better?)
+	defer c.Result()
+	// Iterate until convergence
 	for {
-		str := c.CheckConvergence()
+		str := c.Converged()
 		if str != "" {
-			c.Display.Values()
-			break
+			c.Result()
+			return str, nil
 		}
 		err = c.Iterate()
 		if err != nil {
 			break
 		}
 	}
-	// Want to return the result even if there is an error in case anything
-	// gets lost (maybe a defer would be even better?)
-	return c.Result(), err
+	return "", err
 }
 
-func (cubic *Cubic) Iterate() (err error){
+func (cubic *Cubic) Iterate() (err error) {
 
 	// Initialize
 	var stepMultiplier float64
 	updateCurrPoint := false
 	reverseDirection := false
-    currG := cubic.Grad.Curr()
-    currF := cubic.Obj.Curr()
+	currG := cubic.Grad.Curr
+	currF := cubic.Obj.Curr
 
 	// Evaluate trial point
 	// Step Size is from the original point
 	var trialX float64
-    
+
 	if cubic.initialGradNegative {
-		trialX = cubic.Step.Curr() + cubic.Loc.Init()
+		trialX = cubic.Step.Curr + cubic.Loc.Init
 	} else {
-		trialX = -cubic.Step.Curr() + cubic.Loc.Init()
+		trialX = -cubic.Step.Curr + cubic.Loc.Init
 	}
-    
-    err  = cubic.fun.Eval(trialX)
-    trialF = cubic.fun.Obj()
-    trailG = cubic.Fun.Grad()
+
+	err = cubic.Fun.Eval(trialX)
+	trialF := cubic.Fun.Obj()
+	trialG := cubic.Fun.Grad()
 	// Should this be embedded into Fun so every time eval is called
 	// the count is updated?
-    cubic.NumFunEvals.Add(1)
-    
-    /*
-    fmt.Println("curr step size",cubic.step.Size())
-    fmt.Println("LB", cubic.step.Lb())
-    fmt.Println("UB", cubic.step.Ub())
-    fmt.Println("initX", cubic.x.Init())
-    fmt.Println("currX", cubic.x.Curr())
-    fmt.Println("trialX", trialX)
-    fmt.Println("InitF", cubic.f.Init())
-    fmt.Println("currF", currF)
-    fmt.Println("trialF",trialF)
-        fmt.Println("InitG", cubic.g.Init())
-    fmt.Println("currG", currG)
-    fmt.Println("trialG", trialG)
-     */
-    
-    
-    
-    
-    //cubic.AddToHist(trialX, trialF,trialG)
+	cubic.FunEvals.Add(1)
+	cubic.Loc.Hist.Add(trialX)
+	cubic.Loc.Hist.Add(trialF)
+	cubic.Loc.Hist.Add(trialG)
+
+	/*
+	   fmt.Println("curr step size",cubic.Step.Curr)
+	   fmt.Println("LB", cubic.Step.Lb)
+	   fmt.Println("UB", cubic.step.Ub())
+	   fmt.Println("initX", cubic.x.Init())
+	   fmt.Println("currX", cubic.Loc.Curr)
+	   fmt.Println("trialX", trialX)
+	   fmt.Println("InitF", cubic.f.Init())
+	   fmt.Println("currF", currF)
+	   fmt.Println("trialF",trialF)
+	       fmt.Println("InitG", cubic.g.Init())
+	   fmt.Println("currG", currG)
+	   fmt.Println("trialG", trialG)
+	*/
+
+	//cubic.AddToHist(trialX, trialF,trialG)
 	absTrialG := math.Abs(trialG)
 
 	// Find guess for next point
@@ -181,13 +197,13 @@ func (cubic *Cubic) Iterate() (err error){
 	decreaseInValue := (deltaF < 0)
 	changeInDerivSign := (currG > 0 && trialG < 0) || (currG < 0 && trialG > 0)
 	decreaseInDerivMagnitude := (absTrialG < math.Abs(currG))
-	
-    /*
-    fmt.Println("Decrease in value ", decreaseInValue)
-    fmt.Println("Change in deriv sign ", changeInDerivSign)
-    fmt.Println("Decrease in deriv mag ", decreaseInDerivMagnitude)
-    */
-    
+
+	/*
+	   fmt.Println("Decrease in value ", decreaseInValue)
+	   fmt.Println("Change in deriv sign ", changeInDerivSign)
+	   fmt.Println("Decrease in deriv mag ", decreaseInDerivMagnitude)
+	*/
+
 	// Find coefficients of the cubic polynomial fit between the current point and the new point
 	// Derived from fitting a cubic between (0, CurrF) and (1,TrialF). 
 	// Apply transformations later to reshift the coordinate axis
@@ -207,37 +223,36 @@ func (cubic *Cubic) Iterate() (err error){
 	var a, b, c float64
 	a = trialG + currG - 2*deltaF
 	b = 3*deltaF - 2*currG - trialG
-    
-    c = currG
+
+	c = currG
 	det := (math.Pow(b, 2) - 3*a*c)
 	if a == 0 {
 		//Perfect quadratic fit
 		stepMultiplier = -c / (2 * b)
 	} else if det < 0 {
-		if (decreaseInValue && !changeInDerivSign) {
-            // The trial point has lower function value
-            // and steeper gradient. Set this location as a
-            // lower bound for the minimum, and set the
-            // next point farther in that direction.
-            
-            cubic.SetBound("Lower")
-            // We know we need to increase in step, but unsure how much, so make a guess
-            stepMultiplier = cubic.UnclearStepIncrease()
-            if decreaseInDerivMagnitude{
-                updateCurrPoint = true
-            }
-		}else{
-            // All other conditions we want to decrease the step size, but the
-            // cubic doesn't give an estimate of how much. Just do a binary search
-            cubic.SetBound("Upper")
-            for i:=0;i<10;i++{
-                fmt.Println("Blah")
-            }
-            fmt.Println(cubic.step.Size())
-            stepMultiplier = 0.5
-        }
+		if decreaseInValue && !changeInDerivSign {
+			// The trial point has lower function value
+			// and steeper gradient. Set this location as a
+			// lower bound for the minimum, and set the
+			// next point farther in that direction.
 
-		
+			cubic.SetBound("Lower")
+			// We know we need to increase in step, but unsure how much, so make a guess
+			stepMultiplier = cubic.UnclearStepIncrease()
+			if decreaseInDerivMagnitude {
+				updateCurrPoint = true
+			}
+		} else {
+			// All other conditions we want to decrease the step size, but the
+			// cubic doesn't give an estimate of how much. Just do a binary search
+			cubic.SetBound("Upper")
+			for i := 0; i < 10; i++ {
+				fmt.Println("Blah")
+			}
+			fmt.Println(cubic.Step.Curr)
+			stepMultiplier = 0.5
+		}
+
 	} else {
 		// Use the cubic projection to guess the minimum location for the line search
 		minCubic := (-b + math.Sqrt(det)) / (3 * a)
@@ -255,10 +270,10 @@ func (cubic *Cubic) Iterate() (err error){
 			// point and the trial point. Make the trial point an upper
 			// bound for the minimum, and set it as the current point
 			// if the derivative is smaller in magnitude.
-            cubic.SetBound("Upper")
+			cubic.SetBound("Upper")
 
 			stepMultiplier = cubic.SizeDecrease(minCubic)
-			if decreaseInDerivMagnitude && decreaseInValue{
+			if decreaseInDerivMagnitude && decreaseInValue {
 				updateCurrPoint = true
 				reverseDirection = true
 			}
@@ -269,17 +284,17 @@ func (cubic *Cubic) Iterate() (err error){
 			// and the trial point is a new lower bound and a new
 			// base for the cubic approximation
 
-            cubic.SetBound("Lower")
+			cubic.SetBound("Lower")
 
 			updateCurrPoint = true
 
 			if decreaseInDerivMagnitude {
-				if minCubic < cubic.increaseStepLowerBound {
+				if minCubic < cubic.StepIncreaseMin {
 					// Cubic gave a bad approximation (minimum is more
 					// in this direction). Assume linear decrease in
 					// derivative
-                    
-                    // Check this line
+
+					// Check this line
 					stepMultiplier = math.Abs(currG) / (math.Abs(trialG) - math.Abs(currG))
 				}
 				stepMultiplier = cubic.SizeIncrease(stepMultiplier)
@@ -288,7 +303,7 @@ func (cubic *Cubic) Iterate() (err error){
 				// Found a better point, but the derivative increased
 				// Use cubic approximation if it gives a reasonable guess
 				// otherwise just project forward
-				if minCubic < cubic.increaseStepLowerBound {
+				if minCubic < cubic.StepIncreaseMin {
 					stepMultiplier = cubic.UnclearStepIncrease()
 				} else {
 					stepMultiplier = cubic.SizeIncrease(minCubic)
@@ -306,9 +321,8 @@ func (cubic *Cubic) Iterate() (err error){
 
 	}
 
-
 	var deltaXTrialCurrent float64
-	deltaXTrialCurrent = cubic.step.Size() - cubic.deltaCurrent
+	deltaXTrialCurrent = cubic.Step.Curr - cubic.deltaCurrent
 	newDeltaXFromCurrent := deltaXTrialCurrent * stepMultiplier
 
 	var newStepSize float64
@@ -317,16 +331,16 @@ func (cubic *Cubic) Iterate() (err error){
 	// Want to make sure that the new search location isn't pushing beyond
 	// previously established bounds. If it is, just do a binary search between
 	// the bounds
-	if !cubic.step.WithinBounds(newStepSize){
-		newStepSize = cubic.step.BoundMidpoint()
+	if !cubic.Step.WithinBounds(newStepSize) {
+		newStepSize = cubic.Step.Midpoint()
 	}
 
 	if updateCurrPoint {
-        
-        cubic.x.Set(trialX)
-        cubic.f.Set(trialF)
-        cubic.g.Set(trialG)
-		cubic.deltaCurrent = trialX - cubic.x.Init()
+
+		cubic.Loc.Curr = trialX
+		cubic.Obj.Curr = trialF
+		cubic.Grad.Curr = trialG
+		cubic.deltaCurrent = trialX - cubic.Loc.Init
 		if cubic.initialGradNegative {
 			cubic.deltaCurrent *= -1
 		}
@@ -334,10 +348,10 @@ func (cubic *Cubic) Iterate() (err error){
 			cubic.currStepDirectionPositive = !cubic.currStepDirectionPositive
 		}
 	}
-	cubic.step.SetSize(newStepSize)
-    
-    
-    //fmt.Println("\n")
+	cubic.Step.Curr = newStepSize
+
+	return nil
+	//fmt.Println("\n")
 }
 
 func (c *Cubic) UnclearStepIncrease() float64 {
@@ -348,16 +362,16 @@ func (c *Cubic) UnclearStepIncrease() float64 {
 	// Clean up this code!
 	var stepMultiplier float64
 	if c.currStepDirectionPositive {
-		if math.IsInf(c.step.Ub(), 1) {
-			stepMultiplier = (2*c.step.Size() - c.deltaCurrent) / (c.step.Size() - c.deltaCurrent)
+		if math.IsInf(c.Step.Ub, 1) {
+			stepMultiplier = (2*c.Step.Curr - c.deltaCurrent) / (c.Step.Curr - c.deltaCurrent)
 		} else {
-			stepMultiplier = (c.step.BoundMidpoint() - c.deltaCurrent) / (c.step.Size() - c.deltaCurrent)
+			stepMultiplier = (c.Step.Midpoint() - c.deltaCurrent) / (c.Step.Curr - c.deltaCurrent)
 		}
 	} else {
-		if math.IsInf(c.step.Lb(), -1) {
-			stepMultiplier = (2*c.step.Size() - c.x.Curr()) / (c.step.Size() - c.x.Curr())
+		if math.IsInf(c.Step.Lb, -1) {
+			stepMultiplier = (2*c.Step.Curr - c.Loc.Curr) / (c.Step.Curr - c.Loc.Curr)
 		} else {
-			stepMultiplier = (c.step.BoundMidpoint() - c.x.Curr()) / (c.step.Size() - c.x.Curr())
+			stepMultiplier = (c.Step.Midpoint() - c.Loc.Curr) / (c.Step.Curr - c.Loc.Curr)
 		}
 	}
 	return stepMultiplier
@@ -367,15 +381,15 @@ func (c *Cubic) SetBound(dir string) {
 	if dir == "Lower" {
 		// Want to go farther in this direction
 		if c.currStepDirectionPositive == true {
-			c.step.SetLb(c.step.Size())
+			c.Step.Lb = c.Step.Curr
 		} else {
-			c.step.SetUb(c.step.Size())
+			c.Step.Ub = c.Step.Curr
 		}
 	} else if dir == "Upper" {
 		if c.currStepDirectionPositive == true {
-			c.step.SetUb(c.step.Size())
+			c.Step.Ub = c.Step.Curr
 		} else {
-			c.step.SetLb(c.step.Size())
+			c.Step.Lb = c.Step.Curr
 		}
 	}
 	return
@@ -383,14 +397,13 @@ func (c *Cubic) SetBound(dir string) {
 
 func (c *Cubic) SizeDecrease(minCubic float64) float64 {
 
-	stepMultiplier := math.Max(minCubic, c.decreaseStepLowerBound)
-	stepMultiplier = math.Min(stepMultiplier, c.decreaseStepUpperBound)
+	stepMultiplier := math.Max(minCubic, c.StepDecreaseMin)
+	stepMultiplier = math.Min(stepMultiplier, c.StepDecreaseMax)
 	return stepMultiplier
 }
 
 func (c *Cubic) SizeIncrease(minCubic float64) float64 {
-	stepMultiplier := math.Max(minCubic, c.increaseStepLowerBound)
-	stepMultiplier = math.Min(stepMultiplier, c.increaseStepUpperBound)
+	stepMultiplier := math.Max(minCubic, c.StepIncreaseMin)
+	stepMultiplier = math.Min(stepMultiplier, c.StepIncreaseMax)
 	return stepMultiplier
-}
 }

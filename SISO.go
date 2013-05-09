@@ -8,7 +8,7 @@ type SISOProblem interface {
 
 // Gradient based SISO
 type SISOGradBasedProblem interface {
-	SISO
+	SISOProblem
 	GradientFloat
 }
 

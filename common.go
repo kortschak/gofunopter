@@ -12,11 +12,10 @@ import (
 // (enforced on a per-iteration) basis, so may go over this limit
 // depending on the optimizer used
 type Common struct {
-	Iter        *Iterations
-	FunEvals    *Counter
-	Runtime     *RuntimeStruct
-	convergence string
-	Display
+	Iter     *Iterations
+	FunEvals *Counter
+	Runtime  *RuntimeStruct
+	*Display
 }
 
 func DefaultCommon() *Common {
@@ -38,8 +37,8 @@ func (c *Common) Initialize() {
 }
 
 // Check if any of the elements of the common structure have converged
-func (c *Common) CheckConvergence() (str string) {
-	return CheckConvergence(c.Iter, c.FunEvals, c.Runtime)
+func (c *Common) Converged() (str string) {
+	return Converged(c.Iter, c.FunEvals, c.Runtime)
 }
 
 func (c *Common) Iterate() {
@@ -50,30 +49,19 @@ func (c *Common) DisplayHeadings() []string {
 	return []string{"Iter", "FunEvals"}
 }
 
-func (c *Common) DisplayValues() []string {
-	return []string{"Iter", "FunEvals"}
+func (c *Common) DisplayValues() []interface{} {
+	return []interface{}{c.Iter.Curr(), c.FunEvals.Curr()}
 }
 
-func (c *Common) Result() *CommonResult {
-	return &CommonResult{
-		TotalRuntime:    time.Since(c.Runtime.Start()),
-		TotalIter:       c.Iter.Curr(),
-		TotalFunEvals:   c.FunEvals.Curr(),
-		ConvergenceType: c.convergence,
-	}
-}
-
-type CommonResult struct {
-	TotalRuntime    time.Duration
-	TotalIter       int
-	TotalFunEvals   int
-	ConvergenceType string
+func (c *Common) Result() {
+	SetResults(c.Iter, c.FunEvals, c.Runtime)
 }
 
 type RuntimeStruct struct {
-	Max  time.Duration
-	init time.Time
-	Name string
+	Max   time.Duration
+	init  time.Time
+	Total time.Duration
+	Name  string
 }
 
 func (r *RuntimeStruct) Start() time.Time {
@@ -84,11 +72,15 @@ func (r *RuntimeStruct) Initialize() {
 	r.init = time.Now()
 }
 
-func (r *RuntimeStruct) CheckConvergence() string {
+func (r *RuntimeStruct) Converged() string {
 	if time.Since(r.init).Seconds() > r.Max.Seconds() {
 		return "Maximum " + r.Name + " reached"
 	}
 	return ""
+}
+
+func (r *RuntimeStruct) Result() {
+	r.Total = time.Since(r.init)
 }
 
 type Iterations struct {

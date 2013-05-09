@@ -29,7 +29,7 @@ func DefaultDisplay() *Display {
 	return &Display{DisplayOn: true, TimeInterval: 0.7, HeadingInterval: 30}
 }
 
-func (d *Display) Display() *Display {
+func (d *Display) GetDisplay() *Display {
 	return d
 }
 
