@@ -1,34 +1,11 @@
 package gofunopter
 
 import (
+	"fmt"
 	"math"
 )
 
-// Something which can display values
-type Displayable interface {
-	DisplayHeadings() []string
-	DisplayValues() []interface{}
-	//Display() *Display
-}
-
-type Displayer interface {
-	Displayable
-	GetDisplay() *Display
-}
-
-func SetDisplayMethods(displayer Displayer) {
-	d := displayer.GetDisplay()
-	d.GetHeadings = displayer.DisplayHeadings
-	d.GetValues = displayer.DisplayValues
-}
-
-/*
-func SetDisplay(displayable Displayable) {
-	disp := displayable.Display()
-	disp.SetHeadings(displayable.DisplayHeadings())
-	disp.SetValues(displayable.DisplayValues())
-}
-*/
+var _ = fmt.Println
 
 func AppendValues(values []interface{}, displayables ...Displayable) []interface{} {
 	for _, displayable := range displayables {
@@ -51,13 +28,17 @@ func AppendHeadings(headings []string, displayables ...Displayable) []string {
 }
 
 type Iterator interface {
-	Iterate()
+	Iterate() error
 }
 
-func Iterate(iterators ...Iterator) {
+func Iterate(iterators ...Iterator) (err error) {
 	for _, iterator := range iterators {
-		iterator.Iterate()
+		err := iterator.Iterate()
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 type Converger interface {
@@ -142,6 +123,7 @@ type OptFloat struct {
 	RelTol   float64       // Tolerance relative to the initial value
 	Name     string        // Name of the OptFloat
 	Opt      float64       // Optimal value at the end of the run
+	Disp     bool          // Display this output during teh run if display is on 
 }
 
 // Initializes by setting the current value to the initial value and
@@ -161,10 +143,10 @@ func (o *OptFloat) Initialize() {
 // Make hist return a copy? Have a CopyHist method?
 
 func (o *OptFloat) Converged() string {
-	if o.Curr < o.AbsTol {
+	if math.Abs(o.Curr) < o.AbsTol {
 		return o.Name + " absolute tolerance reached"
 	}
-	if o.Curr/o.absinit < o.RelTol {
+	if math.Abs(o.Curr)/o.absinit < o.RelTol {
 		return o.Name + " relative tolerance reached"
 	}
 	return ""
@@ -172,6 +154,14 @@ func (o *OptFloat) Converged() string {
 
 func (o *OptFloat) Result() {
 	o.Opt = o.Curr
+}
+
+func (o *OptFloat) DisplayHeadings() []string {
+	return []string{o.Name}
+}
+
+func (o *OptFloat) DisplayValues() []interface{} {
+	return []interface{}{o.Curr}
 }
 
 // Returns the default values for an input location
@@ -183,6 +173,8 @@ func DefaultInputFloat() *OptFloat {
 		Name:     "loc",
 		SaveHist: false,
 		Init:     0,
+		Disp:     true,
+		Hist:     &HistoryFloat{},
 	}
 }
 
@@ -190,13 +182,17 @@ func DefaultInputFloat() *OptFloat {
 // Objectives generally don't have any tolerances
 // No idea what the initial function value is
 func DefaultObjectiveFloat() *OptFloat {
-	return &OptFloat{
+	o := &OptFloat{
 		AbsTol:   math.Inf(-1),
 		RelTol:   math.Inf(-1),
 		Name:     "fun",
 		SaveHist: false,
 		Init:     math.NaN(),
+		Curr:     math.NaN(),
+		Disp:     true,
+		Hist:     &HistoryFloat{},
 	}
+	return o
 }
 
 // Returns the default values for the gradient
@@ -207,22 +203,42 @@ func DefaultGradientFloat() *OptFloat {
 		Name:     "grad",
 		SaveHist: false,
 		Init:     math.NaN(),
+		Curr:     math.NaN(),
+		Disp:     true,
+		Hist:     &HistoryFloat{},
 	}
 }
 
-type StepFloat struct {
+type BoundedFloat struct {
 	*OptFloat
-	Lb float64
-	Ub float64
+	Lb         float64
+	Ub         float64
+	DispBounds bool
+}
+
+func (s *BoundedFloat) DisplayHeadings() []string {
+	strs := s.OptFloat.DisplayHeadings()
+	if s.DispBounds {
+		strs = append(strs, s.Name+"LB", s.Name+"UB")
+	}
+	return strs
+}
+
+func (s *BoundedFloat) DisplayValues() []interface{} {
+	vals := s.OptFloat.DisplayValues()
+	if s.DispBounds {
+		vals = append(vals, s.Lb, s.Ub)
+	}
+	return vals
 }
 
 // Midpoint between the bounds
-func (s *StepFloat) Midpoint() float64 {
+func (s *BoundedFloat) Midpoint() float64 {
 	return (s.Lb + s.Ub) / 2.0
 }
 
 // Is the value between the upper and lower bounds
-func (s *StepFloat) WithinBounds(val float64) bool {
+func (s *BoundedFloat) WithinBounds(val float64) bool {
 	if val < s.Lb {
 		return false
 	}
@@ -232,25 +248,30 @@ func (s *StepFloat) WithinBounds(val float64) bool {
 	return true
 }
 
-func (s *StepFloat) Converged() string {
+func (s *BoundedFloat) Converged() string {
 	if (s.Ub - s.Lb) < s.AbsTol {
 		return s.Name + " absolute tolerance reached"
 	}
 	return ""
 }
 
+//TODO: Change this to have a real default bounded float rather than just the step
+
 // Returns the default values for a step size
 // no default relative tolerance
-func DefaultStepFloat() *StepFloat {
-	return &StepFloat{
+func DefaultStepFloat() *BoundedFloat {
+	return &BoundedFloat{
 		OptFloat: &OptFloat{
 			AbsTol:   1E-6,
 			RelTol:   math.Inf(-1),
 			Name:     "step",
 			SaveHist: false,
 			Init:     1,
+			Disp:     true,
+			Hist:     &HistoryFloat{},
 		},
-		Lb: math.Inf(-1),
-		Ub: math.Inf(1),
+		Lb:         math.Inf(-1),
+		Ub:         math.Inf(1),
+		DispBounds: false,
 	}
 }

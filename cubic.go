@@ -10,10 +10,10 @@ import (
 
 type Cubic struct {
 	// Basic values
-	Loc  *OptFloat  // Location
-	Obj  *OptFloat  // Function Value
-	Grad *OptFloat  // Gradient value
-	Step *StepFloat // Step size
+	Loc  *OptFloat     // Location
+	Obj  *OptFloat     // Function Value
+	Grad *OptFloat     // Gradient value
+	Step *BoundedFloat // Step size
 	*Common
 	Fun SISOGradBasedProblem
 
@@ -52,9 +52,12 @@ func (c *Cubic) Initialize() (err error) {
 	// the information is already there
 	c.Common.Initialize()
 	c.Loc.Initialize()
-	if math.IsNaN(c.Obj.Curr) {
+	fmt.Println("initialize")
+	fmt.Println(c.Obj.Init)
+	if math.IsNaN(c.Obj.Init) || math.IsNaN(c.Grad.Curr) {
+		fmt.Println("In isnan")
 		// Initial function value hasn't been set, so do it.
-		err = c.Fun.Eval(c.Loc.Curr)
+		err = c.Fun.Eval(c.Loc.Init)
 		if err != nil {
 			return fmt.Errorf("Error evaluating the function at the set initial value %v", c.Loc.Curr)
 		}
@@ -77,7 +80,11 @@ func (c *Cubic) Initialize() (err error) {
 }
 
 func (c *Cubic) Converged() string {
+	fmt.Println(c.Grad)
 	str := Converged(c.Loc, c.Obj, c.Grad, c.Step)
+	fmt.Println(str)
+	fmt.Println(c.Grad.Curr)
+	fmt.Println(c.Grad.AbsTol)
 	if str != "" {
 		return str
 	}
@@ -93,9 +100,8 @@ func (c *Cubic) Converged() string {
 
 func (c *Cubic) DisplayHeadings() []string {
 	headings := make([]string, 10)
-	headings = AppendHeadings(headings, c.Common)
-	headings = append(headings, "Grad", "StepSize")
-	s, ok := c.Fun.(Displayer)
+	headings = AppendHeadings(headings, c.Common, c.Loc, c.Obj, c.Grad, c.Step)
+	s, ok := c.Fun.(Displayable)
 	if ok {
 		headings = AppendHeadings(headings, s)
 	}
@@ -119,30 +125,6 @@ func (c *Cubic) Result() {
 
 type CubicResult struct {
 	StepHist []float64
-}
-
-func (c *Cubic) Optimize() (str string, err error) {
-	// Add in some check about nil pointers and such
-	err = c.Initialize()
-	if err != nil {
-		return "", err
-	}
-	// Want to return the result even if there is an error in case anything
-	// gets lost (maybe a defer would be even better?)
-	defer c.Result()
-	// Iterate until convergence
-	for {
-		str := c.Converged()
-		if str != "" {
-			c.Result()
-			return str, nil
-		}
-		err = c.Iterate()
-		if err != nil {
-			break
-		}
-	}
-	return "", err
 }
 
 func (cubic *Cubic) Iterate() (err error) {
@@ -175,18 +157,18 @@ func (cubic *Cubic) Iterate() (err error) {
 	cubic.Loc.Hist.Add(trialG)
 
 	/*
-	   fmt.Println("curr step size",cubic.Step.Curr)
-	   fmt.Println("LB", cubic.Step.Lb)
-	   fmt.Println("UB", cubic.step.Ub())
-	   fmt.Println("initX", cubic.x.Init())
-	   fmt.Println("currX", cubic.Loc.Curr)
-	   fmt.Println("trialX", trialX)
-	   fmt.Println("InitF", cubic.f.Init())
-	   fmt.Println("currF", currF)
-	   fmt.Println("trialF",trialF)
-	       fmt.Println("InitG", cubic.g.Init())
-	   fmt.Println("currG", currG)
-	   fmt.Println("trialG", trialG)
+		fmt.Println("curr step size", cubic.Step.Curr)
+		fmt.Println("LB", cubic.Step.Lb)
+		fmt.Println("UB", cubic.Step.Ub)
+		fmt.Println("initX", cubic.Loc.Init)
+		fmt.Println("currX", cubic.Loc.Curr)
+		fmt.Println("trialX", trialX)
+		fmt.Println("InitF", cubic.Obj.Init)
+		fmt.Println("currF", currF)
+		fmt.Println("trialF", trialF)
+		fmt.Println("InitG", cubic.Grad.Init)
+		fmt.Println("currG", currG)
+		fmt.Println("trialG", trialG)
 	*/
 
 	//cubic.AddToHist(trialX, trialF,trialG)
@@ -350,6 +332,7 @@ func (cubic *Cubic) Iterate() (err error) {
 	}
 	cubic.Step.Curr = newStepSize
 
+	//panic("wa")
 	return nil
 	//fmt.Println("\n")
 }

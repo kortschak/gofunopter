@@ -22,6 +22,7 @@ func DefaultCommon() *Common {
 	c := &Common{Iter: &Iterations{Counter: &Counter{Max: math.MaxInt32, Name: "iterations"}},
 		FunEvals: &Counter{Max: math.MaxInt32, Name: "function evaluations"},
 		Runtime:  &RuntimeStruct{Max: math.MaxInt64, Name: "runtime"},
+		Display:  DefaultDisplay(),
 	}
 	SetDisplayMethods(c)
 	return c
@@ -87,6 +88,7 @@ type Iterations struct {
 	*Counter
 }
 
-func (i *Iterations) Iterate() {
+func (i *Iterations) Iterate() error {
 	i.Add(1)
+	return nil
 }
