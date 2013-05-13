@@ -19,6 +19,7 @@ type Common struct {
 	Runtime  *RuntimeStruct
 	*DisplayStruct
 	Displayer
+	disp bool
 }
 
 func DefaultCommon() *Common {
@@ -27,10 +28,18 @@ func DefaultCommon() *Common {
 		FunEvals:      DefaultFunctionEvaluations(),
 		Runtime:       DefaultRuntime(),
 		DisplayStruct: DefaultDisplayStruct(),
-		Displayer:     NewDisplay(true),
+		disp:          true,
 	}
 	SetDisplayMethods(c)
 	return c
+}
+
+func (c *Common) Disp() bool {
+	return c.disp
+}
+
+func (c *Common) SetDisp(val bool) {
+	c.disp = val
 }
 
 func (c *Common) Common() *Common {
@@ -59,7 +68,7 @@ func (c *Common) AppendValues(vals []interface{}) []interface{} {
 	return AppendValues(vals, c.Runtime, c.Iter, c.FunEvals)
 }
 
-func (c *Common) Result() {
+func (c *Common) SetResult() {
 	SetResults(c.Iter, c.FunEvals, c.Runtime)
 }
 
@@ -68,13 +77,21 @@ type RuntimeStruct struct {
 	init time.Time
 	opt  time.Duration
 	Name string
-	Displayer
+	disp bool
+}
+
+func (r *RuntimeStruct) Disp() bool {
+	return r.disp
+}
+
+func (r *RuntimeStruct) SetDisp(val bool) {
+	r.disp = val
 }
 
 func DefaultRuntime() *RuntimeStruct {
 	return &RuntimeStruct{
-		Max:       math.MaxInt64,
-		Displayer: NewDisplay(false),
+		Max:  math.MaxInt64,
+		disp: false,
 	}
 }
 
@@ -115,7 +132,6 @@ var MaxIter Convergence = BasicConvergence{"Maximum iterations reached"}
 
 type Iterations struct {
 	*Counter
-	Displayer
 }
 
 func (i *Iterations) Iterate() error {
@@ -125,8 +141,7 @@ func (i *Iterations) Iterate() error {
 
 func DefaultIterations() *Iterations {
 	return &Iterations{
-		Counter:   NewCounter("Iter", math.MaxInt32-1, MaxIter),
-		Displayer: NewDisplay(true),
+		Counter: NewCounter("Iter", math.MaxInt32-1, MaxIter, true),
 	}
 }
 
@@ -134,12 +149,10 @@ var MaxFunEvals Convergence = BasicConvergence{"Maximum function evaluations rea
 
 func DefaultFunctionEvaluations() *FunctionEvaluations {
 	return &FunctionEvaluations{
-		Counter:   NewCounter("FunEvals", math.MaxInt32-1, MaxFunEvals),
-		Displayer: NewDisplay(true),
+		Counter: NewCounter("FunEvals", math.MaxInt32-1, MaxFunEvals, true),
 	}
 }
 
 type FunctionEvaluations struct {
 	*Counter
-	Displayer
 }

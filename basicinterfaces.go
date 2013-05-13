@@ -5,10 +5,10 @@ type Convergence interface {
 }
 
 type Optimizer interface {
-	Converged() Convergence
-	Initialize() error
-	SetResult()
-	Iterate() error
+	Converger
+	Initializer
+	SetResulter
+	Iterator
 }
 
 type SISOGradBasedOptimizer interface {
@@ -34,16 +34,18 @@ type OptFloat interface {
 	CurrerFloat
 	IniterFloat
 	Displayer
-	Optimizer
+	Initializer
+	SetResulter
 }
 
 type OptTolFloat interface {
+	Converger
 	OptFloat
 	AbsToler
 	RelToler
 }
 
-type BoundedFloat interface {
+type BoundedOptFloat interface {
 	OptTolFloat
 	Lb() float64
 	SetLb(float64)

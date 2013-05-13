@@ -10,10 +10,10 @@ import (
 
 type Cubic struct {
 	// Basic values (should these be interfaces?)
-	Loc  OptFloat         // Location
-	Obj  OptTolFloat      // Function Value
-	Grad OptTolFloat      // Gradient value
-	Step BoundedStepFloat // Step size
+	Loc  OptFloat        // Location
+	Obj  OptTolFloat     // Function Value
+	Grad OptTolFloat     // Gradient value
+	Step BoundedOptFloat // Step size
 	*Common
 	Fun SISOGradBasedProblem
 
@@ -79,7 +79,7 @@ func (c *Cubic) Initialize() (err error) {
 }
 
 func (c *Cubic) Converged() Convergence {
-	conv := Converged(c.Loc, c.Obj, c.Grad, c.Step)
+	conv := Converged(c.Obj, c.Grad, c.Step)
 	if conv != nil {
 		return conv
 	}
@@ -95,7 +95,7 @@ func (c *Cubic) Converged() Convergence {
 
 func (c *Cubic) AppendHeadings(headings []string) []string {
 	headings = AppendHeadings(headings, c.Common, c.Loc, c.Obj, c.Grad, c.Step)
-	s, ok := c.Fun.(Displayable)
+	s, ok := c.Fun.(Displayer)
 	if ok {
 		headings = AppendHeadings(headings, s)
 	}
@@ -105,7 +105,7 @@ func (c *Cubic) AppendHeadings(headings []string) []string {
 func (c *Cubic) AppendValues(values []interface{}) []interface{} {
 	values = AppendValues(values, c.Common)
 	values = append(values, c.Grad.Curr(), c.Step.Curr)
-	s, ok := c.Fun.(Displayable)
+	s, ok := c.Fun.(Displayer)
 	if ok {
 		values = AppendValues(values, s)
 	}
@@ -127,16 +127,16 @@ func (cubic *Cubic) Iterate() (err error) {
 	updateCurrPoint := false
 	reverseDirection := false
 	currG := cubic.Grad.Curr()
-	currF := cubic.Obj.Curr
+	currF := cubic.Obj.Curr()
 
 	// Evaluate trial point
 	// Step Size is from the original point
 	var trialX float64
 
 	if cubic.initialGradNegative {
-		trialX = cubic.Step.Curr + cubic.Loc.Init
+		trialX = cubic.Step.Curr() + cubic.Loc.Init()
 	} else {
-		trialX = -cubic.Step.Curr + cubic.Loc.Init
+		trialX = -cubic.Step.Curr() + cubic.Loc.Init()
 	}
 
 	err = cubic.Fun.Eval(trialX)
@@ -145,9 +145,9 @@ func (cubic *Cubic) Iterate() (err error) {
 	// Should this be embedded into Fun so every time eval is called
 	// the count is updated?
 	cubic.FunEvals.Add(1)
-	cubic.Loc.Hist.Add(trialX)
-	cubic.Loc.Hist.Add(trialF)
-	cubic.Loc.Hist.Add(trialG)
+	cubic.Loc.AddToHist(trialX)
+	cubic.Loc.AddToHist(trialF)
+	cubic.Loc.AddToHist(trialG)
 
 	/*
 		fmt.Println("curr step size", cubic.Step.Curr)
@@ -297,7 +297,7 @@ func (cubic *Cubic) Iterate() (err error) {
 	}
 
 	var deltaXTrialCurrent float64
-	deltaXTrialCurrent = cubic.Step.Curr - cubic.deltaCurrent
+	deltaXTrialCurrent = cubic.Step.Curr() - cubic.deltaCurrent
 	newDeltaXFromCurrent := deltaXTrialCurrent * stepMultiplier
 
 	var newStepSize float64
@@ -312,10 +312,10 @@ func (cubic *Cubic) Iterate() (err error) {
 
 	if updateCurrPoint {
 
-		cubic.Loc.Curr = trialX
-		cubic.Obj.Curr = trialF
-		cubic.Grad.Curr() = trialG
-		cubic.deltaCurrent = trialX - cubic.Loc.Init
+		cubic.Loc.SetCurr(trialX)
+		cubic.Obj.SetCurr(trialF)
+		cubic.Grad.SetCurr(trialG)
+		cubic.deltaCurrent = trialX - cubic.Loc.Init()
 		if cubic.initialGradNegative {
 			cubic.deltaCurrent *= -1
 		}
@@ -323,11 +323,8 @@ func (cubic *Cubic) Iterate() (err error) {
 			cubic.currStepDirectionPositive = !cubic.currStepDirectionPositive
 		}
 	}
-	cubic.Step.Curr = newStepSize
-
-	//panic("wa")
+	cubic.Step.SetCurr(newStepSize)
 	return nil
-	//fmt.Println("\n")
 }
 
 func (c *Cubic) UnclearStepIncrease() float64 {
@@ -338,16 +335,16 @@ func (c *Cubic) UnclearStepIncrease() float64 {
 	// Clean up this code!
 	var stepMultiplier float64
 	if c.currStepDirectionPositive {
-		if math.IsInf(c.Step.Ub, 1) {
-			stepMultiplier = (2*c.Step.Curr - c.deltaCurrent) / (c.Step.Curr - c.deltaCurrent)
+		if math.IsInf(c.Step.Ub(), 1) {
+			stepMultiplier = (2*c.Step.Curr() - c.deltaCurrent) / (c.Step.Curr() - c.deltaCurrent)
 		} else {
-			stepMultiplier = (c.Step.Midpoint() - c.deltaCurrent) / (c.Step.Curr - c.deltaCurrent)
+			stepMultiplier = (c.Step.Midpoint() - c.deltaCurrent) / (c.Step.Curr() - c.deltaCurrent)
 		}
 	} else {
-		if math.IsInf(c.Step.Lb, -1) {
-			stepMultiplier = (2*c.Step.Curr - c.Loc.Curr) / (c.Step.Curr - c.Loc.Curr)
+		if math.IsInf(c.Step.Lb(), -1) {
+			stepMultiplier = (2*c.Step.Curr() - c.Loc.Curr()) / (c.Step.Curr() - c.Loc.Curr())
 		} else {
-			stepMultiplier = (c.Step.Midpoint() - c.Loc.Curr) / (c.Step.Curr - c.Loc.Curr)
+			stepMultiplier = (c.Step.Midpoint() - c.Loc.Curr()) / (c.Step.Curr() - c.Loc.Curr())
 		}
 	}
 	return stepMultiplier
@@ -357,15 +354,15 @@ func (c *Cubic) SetBound(dir string) {
 	if dir == "Lower" {
 		// Want to go farther in this direction
 		if c.currStepDirectionPositive == true {
-			c.Step.Lb = c.Step.Curr
+			c.Step.SetLb(c.Step.Curr())
 		} else {
-			c.Step.Ub = c.Step.Curr
+			c.Step.SetUb(c.Step.Curr())
 		}
 	} else if dir == "Upper" {
 		if c.currStepDirectionPositive == true {
-			c.Step.Ub = c.Step.Curr
+			c.Step.SetUb(c.Step.Curr())
 		} else {
-			c.Step.Lb = c.Step.Curr
+			c.Step.SetLb(c.Step.Curr())
 		}
 	}
 	return

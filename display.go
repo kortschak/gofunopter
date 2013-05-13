@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func AppendValues(values []interface{}, displayables ...Displayable) []interface{} {
+func AppendValues(values []interface{}, displayables ...Displayer) []interface{} {
 	for _, displayable := range displayables {
 		if displayable.Disp() {
 			values = displayable.AppendValues(values)
@@ -15,7 +15,7 @@ func AppendValues(values []interface{}, displayables ...Displayable) []interface
 	return values
 }
 
-func AppendHeadings(headings []string, displayables ...Displayable) []string {
+func AppendHeadings(headings []string, displayables ...Displayer) []string {
 	for _, displayable := range displayables {
 		headings = displayable.AppendHeadings(headings)
 	}
@@ -30,7 +30,7 @@ type Displayer interface {
 }
 
 type GetDisplayStructer interface {
-	Displayable
+	Displayer
 	GetDisplayStruct() *DisplayStruct
 }
 
@@ -66,7 +66,7 @@ type DisplayStruct struct {
 // Returns the default settings for the display parameters
 func DefaultDisplayStruct() *DisplayStruct {
 	// Defaults are for forcing display on the first iteration
-	return &Display{
+	return &DisplayStruct{
 		DisplayOn:       true,
 		TimeInterval:    700 * time.Millisecond,
 		HeadingInterval: 30,

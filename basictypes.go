@@ -42,6 +42,26 @@ func (b StepConvergence) ConvergenceType() string {
 	return b.Str
 }
 
+type OptimizerFailure struct {
+	Str string
+	Err error
+}
+
+func (o OptimizerFailure) ConvergenceType() string {
+	return o.Str + o.Err.Error()
+}
+
+func (o OptimizerFailure) Error() string {
+	return o.Str + o.Err.Error()
+}
+
+func InitializationError(err error) OptimizerFailure {
+	return OptimizerFailure{
+		Str: "Optimizer failed to initialize, ",
+		Err: err,
+	}
+}
+
 // Counts up and converges if there is a maximum
 type Counter struct {
 	max   int // Maximum allowable value of the counter
@@ -49,10 +69,26 @@ type Counter struct {
 	total int // Total number at the end of the optimization run
 	conv  Convergence
 	name  string
+	disp  bool
 }
 
-func NewCounter(name string, max int, conv Convergence) *Counter {
-	return &Counter{max: max, conv: conv}
+// No counter iterate method because we don't know how many we want to add on each iteration
+
+func NewCounter(name string, max int, conv Convergence, disp bool) *Counter {
+	return &Counter{
+		name: name,
+		max:  max,
+		conv: conv,
+		disp: disp,
+	}
+}
+
+func (c *Counter) Disp() bool {
+	return c.disp
+}
+
+func (c *Counter) SetDisp(val bool) {
+	c.disp = val
 }
 
 func (c *Counter) Max() int {
@@ -66,19 +102,14 @@ func (c *Counter) SetMax(val int) {
 func (c *Counter) Add(delta int) {
 	c.curr += delta
 }
-
-//var MaxCounter = &BasicConvergence{"Max counter reached"}
-
 func (c *Counter) Converged() Convergence {
-	// returns a bool because we want to force implementers to make
-	// a better convergence type for whatever they're using the counter for
 	if c.curr > c.max {
 		return c.conv
 	}
 	return nil
 }
 
-func (c *Counter) SetOpt() {
+func (c *Counter) SetResult() {
 	c.total = c.curr
 }
 
@@ -125,7 +156,7 @@ func (b *BasicOptFloat) SetDisp(val bool) {
 	b.disp = val
 }
 
-func (b *BasicOptFloat) Save() float64 {
+func (b *BasicOptFloat) Save() bool {
 	return b.save
 }
 
@@ -141,7 +172,7 @@ func (b *BasicOptFloat) Curr() float64 {
 	return b.curr
 }
 
-func (b *BasicOptFloat) SetCurr(val float64) float64 {
+func (b *BasicOptFloat) SetCurr(val float64) {
 	b.curr = val
 }
 
@@ -154,19 +185,19 @@ func (b *BasicOptFloat) SetInit(val float64) {
 }
 
 func (b *BasicOptFloat) Initialize() error {
-	b.save = make([]float64, 0)
+	b.hist = make([]float64, 0)
 	b.curr = b.init
-}
-func (b *BasicOptFloat) Converged() Convergence {
 	return nil
 }
 
 func (b *BasicOptFloat) AppendHeadings(headings []string) []string {
 	headings = append(headings, b.name)
+	return headings
 }
 
 func (b *BasicOptFloat) AppendValues(vals []interface{}) []interface{} {
 	vals = append(vals, b.curr)
+	return vals
 }
 
 func (b *BasicOptFloat) SetResult() {
@@ -174,10 +205,10 @@ func (b *BasicOptFloat) SetResult() {
 }
 
 func (b *BasicOptFloat) Opt() float64 {
-	b.opt = b.curr
+	return b.opt
 }
 
-type BasicTolerFloat struct {
+type BasicTolFloat struct {
 	*BasicOptFloat
 	absTol     float64
 	absTolConv Convergence
@@ -187,43 +218,43 @@ type BasicTolerFloat struct {
 	absInit    float64
 }
 
-func NewBasicTolerFloat(name string, disp bool, init float64, absTol float64,
-	absTolConv Convergence, relTol float64, relTolConv Convergence) *BasicTolerFloat {
-	return &BasicTolerFloat{
+func NewBasicTolFloat(name string, disp bool, init float64, absTol float64,
+	absTolConv Convergence, relTol float64, relTolConv Convergence) *BasicTolFloat {
+	return &BasicTolFloat{
 		BasicOptFloat: &BasicOptFloat{name: name, disp: disp, init: init},
 		absTol:        absTol,
-		absTolCov:     absTolConv,
+		absTolConv:    absTolConv,
 		relTol:        relTol,
 		relTolConv:    relTolConv,
 	}
 }
 
-func (b *BasicTolerFloat) SetInit(val float64) {
+func (b *BasicTolFloat) SetInit(val float64) {
 	b.init = val
 	b.absInit = math.Abs(val)
 }
 
-func (b *BasicTolerFloat) SetCurr(val float64) {
+func (b *BasicTolFloat) SetCurr(val float64) {
 	b.curr = val
 	b.absCurr = math.Abs(val)
 }
 
-func (b *BasicTolerFloat) SetAbsTol(val float64) {
+func (b *BasicTolFloat) SetAbsTol(val float64) {
 	b.absTol = val
 }
 
-func (b *BasicTolerFloat) AbsTol() float64 {
+func (b *BasicTolFloat) AbsTol() float64 {
 	return b.absTol
 }
-func (b *BasicTolerFloat) SetRelTol(val float64) {
+func (b *BasicTolFloat) SetRelTol(val float64) {
 	b.relTol = val
 }
 
-func (b *BasicTolerFloat) RelTol() float64 {
+func (b *BasicTolFloat) RelTol() float64 {
 	return b.relTol
 }
 
-func (b *BasicTolerFloat) Converged() Convergence {
+func (b *BasicTolFloat) Converged() Convergence {
 	if b.absCurr < b.absTol {
 		return b.absTolConv
 	}
@@ -233,19 +264,16 @@ func (b *BasicTolerFloat) Converged() Convergence {
 	return nil
 }
 
-func NewAbsTol(tol float64, c Convergence) *AbsTolStruct {
-	return &AbsTolStruct{
-		tol:         tol,
-		Convergence: c,
-	}
-}
-
 var LocAbsTol Convergence = LocConvergence{"Location absolute tolerance reached"}
 var LocRelTol Convergence = LocConvergence{"Location relative tolerance reached"}
 var ObjAbsTol Convergence = FunConvergence{"Function absolute tolerance reached"}
 var ObjRelTol Convergence = FunConvergence{"Function relative tolerance reached"}
 var GradAbsTol Convergence = GradConvergence{"Gradient absolute tolerance reached"}
 var GradRelTol Convergence = GradConvergence{"Gradient relative tolerance reached"}
+var StepAbsTol Convergence = StepConvergence{"Step absolute tolerance reached"}
+var StepRelTol Convergence = StepConvergence{"Step relative tolerance reached"}
+var StepBoundsAbsTol Convergence = StepConvergence{"Step bounds absolute tolerance reached"}
+var StepBoundsRelTol Convergence = StepConvergence{"Step bounds absolute tolerance reached"}
 
 const DefaultGradAbsTol = 1E-6
 const DefaultGradRelTol = 1E-8
@@ -254,76 +282,74 @@ func DefaultLocationFloat() *BasicOptFloat {
 	return NewBasicOptFloat("Loc", false, 0)
 }
 
-func DefaultObjectiveFloat() *BasicTolerFloat {
-	return NewBasicTolerFloat("Obj", true, math.NaN(), 0, ObjAbsTol, 0, ObjRelTol)
+func DefaultObjectiveFloat() *BasicTolFloat {
+	return NewBasicTolFloat("Obj", true, math.NaN(), 0, ObjAbsTol, 0, ObjRelTol)
 }
 
-func DefaultGradientFloat() *BasicTolerFloat {
-	return NewBasicTolerFloat("Grad", true, math.NaN(), DefaultGradAbsTol, GradAbsTol, DefaultGradRelTol, GradRelTol)
+func DefaultGradientFloat() *BasicTolFloat {
+	return NewBasicTolFloat("Grad", true, math.NaN(), DefaultGradAbsTol, GradAbsTol, DefaultGradRelTol, GradRelTol)
 }
 
 // TODO: Implement display bounds
-type BoundsFloatStruct struct {
-	lb float64
-	ub float64
-	CurrInitGetSetterFloat
-	abstol AbsTol
-	reltol RelTol
-	Name   string
-	Displayer
+type BasicBoundsFloat struct {
+	*BasicTolFloat
+	lb      float64
+	ub      float64
+	gap     float64
+	initGap float64
 }
 
-func NewBoundsFloat(name string, lb, ub, abstol float64, absconv Convergence, reltol float64, relconv Convergence) *BoundsFloatStruct {
-	b := &BoundsFloatStruct{}
-	b.lb = math.Inf(-1)
-	b.ub = math.Inf(1)
-	b.CurrInitGetSetterFloat, b.abstol, b.reltol = NewAbsRelTolStruct(b.ub-b.lb, abstol, absconv, reltol, relconv)
-	b.Name = name
-	b.Displayer = NewDisplay(false)
-	return b
+func NewBasicBoundsFloat(name string, disp bool, init float64, absTol float64,
+	absTolConv Convergence, relTol float64, relTolConv Convergence, lb, ub float64) *BasicBoundsFloat {
+	return &BasicBoundsFloat{
+		BasicTolFloat: NewBasicTolFloat(name, disp, init, absTol, absTolConv, relTol, relTolConv),
+		lb:            lb,
+		ub:            ub,
+	}
 }
 
-func (b *BoundsFloatStruct) AbsTol() AbsTol {
-	return b.abstol
+func (s *BasicBoundsFloat) Initialize() error {
+	s.initGap = s.ub - s.lb
+	s.gap = s.ub - s.lb
+	if s.initGap < 0 {
+		return fmt.Errorf("Lower bound is greater than upper bound")
+	}
+	return nil
 }
 
-func (b *BoundsFloatStruct) RelTol() RelTol {
-	return b.reltol
-}
-
-func (s *BoundsFloatStruct) Lb() float64 {
+func (s *BasicBoundsFloat) Lb() float64 {
 	return s.lb
 }
 
-func (s *BoundsFloatStruct) Ub() float64 {
+func (s *BasicBoundsFloat) Ub() float64 {
 	return s.ub
 }
 
-func (s *BoundsFloatStruct) SetLb(val float64) {
+func (s *BasicBoundsFloat) SetLb(val float64) {
 	s.lb = val
-	s.SetCurr(s.ub - s.lb)
+	s.gap = s.ub - s.lb
 }
 
-func (s *BoundsFloatStruct) SetUb(val float64) {
+func (s *BasicBoundsFloat) SetUb(val float64) {
 	s.ub = val
-	s.SetCurr(s.ub - s.lb)
+	s.gap = s.ub - s.lb
 }
 
-func (s *BoundsFloatStruct) AppendHeadings(strs []string) []string {
-	return append(strs, s.Name+"LB", s.Name+"UB")
+func (s *BasicBoundsFloat) AppendHeadings(strs []string) []string {
+	return append(strs, s.name+"LB", s.name+"UB")
 }
 
-func (s *BoundsFloatStruct) AppendValues(vals []interface{}) []interface{} {
+func (s *BasicBoundsFloat) AppendValues(vals []interface{}) []interface{} {
 	return append(vals, s.lb, s.lb)
 }
 
 // Midpoint between the bounds
-func (s *BoundsFloatStruct) Midpoint() float64 {
+func (s *BasicBoundsFloat) Midpoint() float64 {
 	return (s.lb + s.ub) / 2.0
 }
 
 // Is the value between the upper and lower bounds
-func (s *BoundsFloatStruct) WithinBounds(val float64) bool {
+func (s *BasicBoundsFloat) WithinBounds(val float64) bool {
 	if val < s.lb {
 		return false
 	}
@@ -333,42 +359,23 @@ func (s *BoundsFloatStruct) WithinBounds(val float64) bool {
 	return true
 }
 
-//var BoundgapAbsTol Convergence = BasicConvergence{"Bound gap absolute tolerance reached"}
-
-func (s *BoundsFloatStruct) Converged() Convergence {
-	return Converged(s.AbsTol(), s.RelTol())
-}
-
-var StepAbsTol Convergence = StepConvergence{"Step absolute tolerance reached"}
-var StepRelTol Convergence = StepConvergence{"Step relative tolerance reached"}
-var StepBoundsAbsTol Convergence = StepConvergence{"Step bounds absolute tolerance reached"}
-var StepBoundsRelTol Convergence = StepConvergence{"Step bounds absolute tolerance reached"}
-
-type BoundedStepFloatStruct struct {
-	CurrInitGetSetterFloat
-	HistorySaverFloat
-	Displayer
-	*BoundsFloatStruct
-}
-
-func (s *BoundedStepFloatStruct) Initialize() error {
+func (b *BasicBoundsFloat) Converged() Convergence {
+	if math.IsInf(b.ub, 0) || math.IsInf(b.lb, 0) {
+		return nil
+	}
+	if b.gap < b.absTol {
+		return b.absTolConv
+	}
+	if b.gap/b.initGap < b.absTol {
+		return b.relTolConv
+	}
 	return nil
 }
 
 const DefaultInitStepSize = 1
 const DefaultBoundedStepFloatAbsTol = 0 //
 const DefaultBoundedStepFloatRelTol = 0 // Turn off step rel tol
-// Returns the default values for a step size
-// no default relative tolerance
-func DefaultBoundedStepFloat() *BoundedStepFloatStruct {
-	return &BoundedStepFloatStruct{
-		CurrInitGetSetterFloat: NewCurrInitFloat(DefaultInitStepSize),
-		HistorySaverFloat:      DefaultHistorySaverFloat(),
-		Displayer:              NewDisplay(false),
-		BoundsFloatStruct:      NewBoundsFloat("Step", math.Inf(-1), math.Inf(1), DefaultBoundedStepFloatAbsTol, StepBoundsAbsTol, DefaultBoundedStepFloatRelTol, StepBoundsRelTol),
-	}
-}
 
-//func (b *BoundedStepFloatStruct) Converged() Convergence {
-//	return Converged(c.BoundsFloatStruct)
-//}
+func DefaultBoundedStepFloat() *BasicBoundsFloat {
+	return NewBasicBoundsFloat("Step", false, 1, DefaultBoundedStepFloatAbsTol, StepBoundsAbsTol, DefaultBoundedStepFloatRelTol, StepBoundsRelTol, math.Inf(-1), math.Inf(1))
+}

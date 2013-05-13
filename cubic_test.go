@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"testing"
+	"time"
 )
 
 var _ = fmt.Println
@@ -38,8 +39,14 @@ func (t *SisoGBTest) Grad() float64 {
 
 func TestCubic(t *testing.T) {
 	c := DefaultCubic()
+	c.TimeInterval = 0 * time.Second
+	c.HeadingInterval = 0
 	fmt.Println("In test", c.Obj.Init)
 	problem := &SisoGBTest{Fun: Fun1}
 	c.Fun = problem
-	Optimize(c)
+	conv, err := Optimize(c)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	fmt.Println(conv)
 }
