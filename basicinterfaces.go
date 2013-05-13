@@ -31,6 +31,23 @@ type BoundedOptFloat interface {
 	WithinBounds(float64) bool
 }
 
+type OptFloatSlice interface {
+	HistoryFloatSlice
+	CurrerFloatSlice
+	IniterFloatSlice
+	Displayer
+	Initializer
+	SetResulter
+	OpterFloat
+}
+
+type OptTolFloatSlice interface {
+	Converger
+	OptFloatSlice
+	AbsToler
+	RelToler
+}
+
 // The error is for error checking
 type Initializer interface {
 	Initialize() error
@@ -48,6 +65,12 @@ func Initialize(initializers ...Initializer) (err error) {
 
 type HistoryFloat interface {
 	AddToHist(float64)
+	Save() bool
+	SetSave(bool)
+}
+
+type HistoryFloatSlice interface {
+	AddToHist([]float64)
 	Save() bool
 	SetSave(bool)
 }
@@ -88,6 +111,9 @@ type SetResulter interface {
 type OpterFloat interface {
 	Opt() float64
 }
+type OpterFloatSlice interface {
+	Opt() []float64
+}
 
 func SetResults(resulters ...SetResulter) {
 	for _, resulter := range resulters {
@@ -103,6 +129,16 @@ type CurrerFloat interface {
 type IniterFloat interface {
 	SetInit(float64)
 	Init() float64
+}
+
+type CurrerFloatSlice interface {
+	SetCurr([]float64)
+	Curr() []float64
+}
+
+type IniterFloatSlice interface {
+	SetInit([]float64)
+	Init() []float64
 }
 
 type RelToler interface {

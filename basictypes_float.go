@@ -161,7 +161,7 @@ func (b *BasicTolFloat) Converged() Convergence {
 	if b.absCurr < b.absTol {
 		return b.absTolConv
 	}
-	if b.absCurr/b.absInit < b.absTol {
+	if b.absCurr/b.absInit < b.relTol {
 		return b.relTolConv
 	}
 	return nil
