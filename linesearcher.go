@@ -1,73 +1,73 @@
 package gofunopter
 
-//import "math"
+import "math"
 
-/*
 // TODO: Add in error checking for positive initial gradient? Maybe should be a panic
 // because it shouldn't ever occur
 // TODO: Make AddToHist thread safe so multiple linesearches could be called simulaneously
 
 type WolfeConditioner interface {
-	Converge() WolfeConverged
-	SetInit(initObj, initGrad float64)
-	SetCurr(obj, grad float64)
-	SetWolfeConstants(funConst, gradConst float64)
+	IsConverged(initObj, initGrad, currObj, currGrad, step float64) bool
+	SetFunConst(funConst float64)
+	SetGradConst(gradConst float64)
 }
 
 type WolfeConvergence struct {
-	String string
+	Str string
 }
 
-func (w WolfeConvergence) String() string {
-	return w.String
+func (w WolfeConvergence) ConvergenceType() string {
+	return w.Str
 }
 
 type WeakWolfeConditions struct {
-	FunConst  float64
-	GradConst float64
-	initObj   float64
-	initGrad  float64
+	funConst  float64
+	gradConst float64
 }
 
-func (s *WeakWolfeConditions) SetInit(obj, grad float64) {
-	s.initObj = obj
-	s.initGrad = grad
-}
-
-func (s *WeakWolfeConditions) WolfeConditionsMet(obj, directionalderivative, step float64) bool {
-	if obj >= s.initObj+s.FunConst*step*directionalderivative {
+//func (s *WeakWolfeConditions) WolfeConditionsMet(obj, directionalderivative, step float64) bool {
+func (w *WeakWolfeConditions) IsConverged(initObj, initGrad, currObj, currGrad, step float64) bool {
+	if currObj >= initObj+w.funConst*step*currGrad {
 		return false
 	}
-	if directionalderivative <= s.GradConst*s.initGrad {
+	if currGrad <= w.gradConst*initGrad {
 		return false
 	}
 	return true
+}
+
+func (w *WeakWolfeConditions) SetFunConst(val float64) {
+	w.funConst = val
+}
+
+func (w *WeakWolfeConditions) SetGradConst(val float64) {
+	w.gradConst = val
 }
 
 type StrongWolfeConditions struct {
-	FunConst    float64
-	GradConst   float64
-	initObj     float64
-	initGrad    float64
-	absInitGrad float64
+	funConst  float64
+	gradConst float64
 }
 
-func (s *StrongWolfeConditions) SetInit(obj, grad float64) {
-	s.initObj = obj
-	s.initGrad = grad
-	s.absInitGrad = math.Abs(initGrad)
+func (s *StrongWolfeConditions) SetFunConst(val float64) {
+	s.funConst = val
 }
 
-func (s *StrongWolfeConditions) WolfeConditionsMet(obj, directionalderivative, step float64) bool {
-	if obj >= s.initObj+s.FunConst*step*directionalderivative {
+func (s *StrongWolfeConditions) SetGradConst(val float64) {
+	s.gradConst = val
+}
+
+func (s *StrongWolfeConditions) Converge(initObj, initGrad, currObj, currGrad, step float64) bool {
+	if currObj >= initObj+s.funConst*step*currGrad {
 		return false
 	}
-	if math.Abs(directionalderivative) >= s.GradConst*s.absInitGrad {
+	if math.Abs(currGrad) >= s.gradConst*math.Abs(initGrad) {
 		return false
 	}
 	return true
 }
 
+/*
 // Maybe everything should be through interfaces to make everything easier
 // to set. Make OptFloat an interface. Also probably makes it easier to customize.
 // Harder to save possibly, but not hard to just save the float values
