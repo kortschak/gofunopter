@@ -15,63 +15,21 @@ package gofunopter
 // specific functions for certain parts, such as EvalObj(), EvalConstraints(), and EvalGrad()
 // not added now, but possibly in the future when we have a better idea of all the optimizers
 
-// InputFloat is a type that can evaluate the objective at for a single real objective
-type InputFloat interface {
-	Eval(float64) error
-}
-
-// Single input is a type that can evaluate the objective for a multiple input vector
-type InputFloatSlice interface {
-	Eval([]float64)
-}
-
-// Returns the cached single objective value
-type OutputFloat interface {
-	Obj() float64
-}
-
-// Returns the cached multiple objective value
-type OutputFloatSlice interface {
-	Obj() []float64
-}
-
-// Returns the cached gradient value
-type GradientFloat interface {
-	Grad() float64
-}
-
-// Returns the cached gradient value
-type GradientFloatSlice interface {
-	Grad() []float64
-}
-
-type ConstraintFloat interface {
-	Constr() float64 // Return the constraint violation
-}
-
-type ConstraintFloatSlice interface {
-	Constr() []float64 // Returns a vector of all the constraint violations
-}
-
 type SisoProblem interface {
-	InputFloat
-	OutputFloat
+	Eval(loc float64) (obj float64)
 }
 
 // Gradient based SISO
 type SisoGradBasedProblem interface {
-	SisoProblem
-	GradientFloat
+	Eval(loc float64) (obj float64, grad float64)
 }
 
 type MisoProblem interface {
-	InputFloatSlice
-	OutputFloat
+	Eval(loc []float64) (obj float64)
 }
 
 type MisoGradBasedProblem interface {
-	MisoProblem
-	GradientFloatSlice
+	Eval(loc []float64) (obj float64, grad []float64)
 }
 
 /*

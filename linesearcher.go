@@ -10,6 +10,8 @@ type WolfeConditioner interface {
 	IsConverged(initObj, initGrad, currObj, currGrad, step float64) bool
 	SetFunConst(funConst float64)
 	SetGradConst(gradConst float64)
+	SetInit(initObj, initGrad float64)
+	SetCurr(currObj, currGrad, step float64)
 }
 
 type WolfeConvergence struct {
@@ -23,17 +25,34 @@ func (w WolfeConvergence) ConvergenceType() string {
 type WeakWolfeConditions struct {
 	funConst  float64
 	gradConst float64
+	currObj   float64
+	currGrad  float64
+	initObj   float64
+	initGrad  float64
+	step      float64
+}
+
+func (w *WeakWolfeConditions) SetInit(initObj, initGrad float64) {
+	w.initObj = initObj
+	w.initGrad = initGrad
+	w.step = math.Inf(1)
+}
+
+func (w *WeakWolfeConditions) SetCurr(currObj, currGrad, currStep float64) {
+	w.currObj = currObj
+	w.currGrad = currGrad
+	w.step = currStep
 }
 
 //func (s *WeakWolfeConditions) WolfeConditionsMet(obj, directionalderivative, step float64) bool {
-func (w *WeakWolfeConditions) IsConverged(initObj, initGrad, currObj, currGrad, step float64) bool {
-	if currObj >= initObj+w.funConst*step*currGrad {
-		return false
+func (w *WeakWolfeConditions) Converged() Convergence {
+	if w.currObj >= w.initObj+w.funConst*w.step*w.currGrad {
+		return nil
 	}
-	if currGrad <= w.gradConst*initGrad {
-		return false
+	if w.currGrad <= w.gradConst*w.initGrad {
+		return nil
 	}
-	return true
+	return WolfeConvergence{"Weak Wolfe conditions met"}
 }
 
 func (w *WeakWolfeConditions) SetFunConst(val float64) {
@@ -47,6 +66,23 @@ func (w *WeakWolfeConditions) SetGradConst(val float64) {
 type StrongWolfeConditions struct {
 	funConst  float64
 	gradConst float64
+	currObj   float64
+	currGrad  float64
+	initObj   float64
+	initGrad  float64
+	step      float64
+}
+
+func (s *StrongWolfeConditions) SetInit(initObj, initGrad float64) {
+	s.initObj = initObj
+	s.initGrad = initGrad
+	s.step = math.Inf(1)
+}
+
+func (s *StrongWolfeConditions) SetCurr(currObj, currGrad, currStep float64) {
+	s.currObj = currObj
+	s.currGrad = currGrad
+	s.step = currStep
 }
 
 func (s *StrongWolfeConditions) SetFunConst(val float64) {
@@ -57,27 +93,27 @@ func (s *StrongWolfeConditions) SetGradConst(val float64) {
 	s.gradConst = val
 }
 
-func (s *StrongWolfeConditions) Converge(initObj, initGrad, currObj, currGrad, step float64) bool {
-	if currObj >= initObj+s.funConst*step*currGrad {
-		return false
+func (s *StrongWolfeConditions) Converged() Convergence {
+	if s.currObj >= s.initObj+s.funConst*s.step*s.currGrad {
+		return nil
 	}
-	if math.Abs(currGrad) >= s.gradConst*math.Abs(initGrad) {
-		return false
+	if math.Abs(s.currGrad) >= s.gradConst*math.Abs(s.initGrad) {
+		return nil
 	}
-	return true
+	return WolfeConvergence{"Strong Wolfe conditions met"}
 }
 
-/*
 // Maybe everything should be through interfaces to make everything easier
 // to set. Make OptFloat an interface. Also probably makes it easier to customize.
 // Harder to save possibly, but not hard to just save the float values
 
-type Linesearchable interface {
-	MISOGradBasedOptimizer
-	LinesearchMethod() SISOGradBasedOptimizer
-	Wolfe() WolfeConditioner
+type Linesearcher interface {
+	MisoGradBasedOptimizer
+	LinesearchMethod() SisoGradBasedOptimizer
+	WolfeConditions() WolfeConditioner
 }
 
+/*
 type Linesearcher interface {
 	Method() SISOGradBasedOptimizer
 	SetMethod(SISOGradBasedOptimizer)
@@ -85,6 +121,7 @@ type Linesearcher interface {
 	SetWolfe(WolfeConditioner)
 	Linesearch(linesearcher Linsearchable, direction []float64, initLoc []float64, initObj float64, initGrad []float64) (Convergence, err)
 }
+*/
 
 type LinesearchResult struct {
 	Loc       []float64
@@ -98,14 +135,9 @@ type LinesearchResult struct {
 // in the line search in parallel?
 // Could also define a linesearch interface, and then have sequential, parallel, etc.
 
-// Eventually change this to use just the necessary problems 
-type Linesearchable interface {
-	MISOGradBasedOptimizer
-}
-
 type LinesearchFun struct {
-	Linesearch Linesearchable
-	//MisoProb   MISOGradBasedProblem
+	Linesearch Linesearcher
+	//MisoProb   MisoGradBasedProblem
 	Direction []float64
 	Loc       []float64
 	InitLoc   []float64
@@ -113,36 +145,36 @@ type LinesearchFun struct {
 
 func (l *LinesearchFun) Eval(step float64) error {
 	for i, val := range l.Direction {
-		Loc[i] = val*step + InitLoc[i]
+		l.Loc[i] = val*step + l.InitLoc[i]
 	}
-	Linesearch.Loc().AddToHist(Loc)
-	return l.Linesearch.Fun().Eval(Loc)
+	l.Linesearch.Location().AddToHist(l.Loc)
+	err := l.Linesearch.Function().Eval(l.Loc)
+	return err
 }
 
 func (l *LinesearchFun) Obj() float64 {
-	o := l.Linesearch.Fun().Obj()
-	l.Linesearch.Obj().AddToHist(o)
+	o := l.Linesearch.Function().Obj()
+	l.Linesearch.Objective().AddToHist(o)
 	return o
 }
 
 func (l *LinesearchFun) Grad() float64 {
-	g := l.Linesearch.Fun().Grad()
+	g := l.MisoProb.Function().Grad()
 	l.Linesearch.Grad().AddToHist(g)
 	return smatrix.DotVector(l.Direction, g)
 }
 
 func (l *LinesearchFun) Converged() string {
 	// Set the function and gradient values for the line searcher
-	l.Linesearch.Wolfe().Set(l.Linesearch.Fun().Obj(), l.Linesearch.Fun().Grad())
+	l.Linesearch.WolfeConditions().Set(l.Linesearch.Fun().Obj(), l.Linesearch.Fun().Grad())
 	return l.Linesearch.Wolfe().Converged()
 }
 
 type LineSearchSuccess BasicConvergence
 type LineSearchFailure BasicConvergence
-type OptimizerError BasicConvergence
-type FailedConvergence BasicConvergence
 
 // Move the SISO into here
+/*
 type SeqLinesearch struct {
 	Siso  *SISOGradBasedOptimizer
 	Wolfe *WolfeConditioner
@@ -157,8 +189,9 @@ func DefaultSequentialLinesearch() *SeqLinesearch {
 		},
 	}
 }
-
-func (s *SeqLinesearch) Linesearch(linesearcher Linsearchable, direction []float64, initLoc []float64, initObj float64, initGrad []float64) {
+*/
+func Linesearch(MisoGradBasedOptimizer, direction []float64, initLoc []float64, initObj float64, initGrad []float64) {
+	//func (s *SeqLinesearch) Linesearch(linesearcher Linsearchable, direction []float64, initLoc []float64, initObj float64, initGrad []float64) {
 	newX := make([]float64, len(x0.Curr()))
 
 	sisoGradBased = linesearcher.LinesearchMethod()
@@ -186,4 +219,3 @@ func (s *SeqLinesearch) Linesearch(linesearcher Linsearchable, direction []float
 	}
 	return &LinesearchSuccess{}, nil
 }
-*/

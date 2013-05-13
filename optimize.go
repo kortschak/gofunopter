@@ -35,6 +35,14 @@ type SisoGradBasedOptimizer interface {
 	Location() OptFloat
 	Objective() OptTolFloat
 	Gradient() OptTolFloat
+	Function() SisoGradBasedProblem
+}
+
+type MisoGradBasedOptimizer interface {
+	Optimizer
+	Location() OptFloatSlice
+	Objective() OptTolFloat
+	Gradient() OptTolFloatSlice
 	Function() MisoGradBasedProblem
 }
 
