@@ -8,9 +8,8 @@ import (
 
 func AppendValues(values []interface{}, displayables ...Displayable) []interface{} {
 	for _, displayable := range displayables {
-		newValues := displayable.DisplayValues()
-		for _, val := range newValues {
-			values = append(values, val)
+		if displayable.Disp() {
+			values = displayable.AppendValues(values)
 		}
 	}
 	return values
@@ -18,30 +17,49 @@ func AppendValues(values []interface{}, displayables ...Displayable) []interface
 
 func AppendHeadings(headings []string, displayables ...Displayable) []string {
 	for _, displayable := range displayables {
-		newHeadings := displayable.DisplayHeadings()
-		for _, val := range newHeadings {
-			headings = append(headings, val)
-		}
+		headings = displayable.AppendHeadings(headings)
 	}
 	return headings
 }
 
+type Displayer interface {
+	Disp() bool
+	SetDisp(bool)
+}
+
+type BasicDisplayer struct {
+	disp bool
+}
+
+func (b *BasicDisplayer) Disp() bool {
+	return b.disp
+}
+
+func (b *BasicDisplayer) SetDisp(val bool) {
+	b.disp = val
+}
+
+func NewDisplay(val bool) *BasicDisplayer {
+	return &BasicDisplayer{disp: val}
+}
+
 // Something which can display values
 type Displayable interface {
-	DisplayHeadings() []string
-	DisplayValues() []interface{}
+	AppendHeadings([]string) []string
+	AppendValues([]interface{}) []interface{}
+	Disp() bool
 	//Display() *Display
 }
 
-type Displayer interface {
+type GetDisplayStructer interface {
 	Displayable
-	GetDisplay() *Display
+	GetDisplayStruct() *DisplayStruct
 }
 
-func SetDisplayMethods(displayer Displayer) {
-	d := displayer.GetDisplay()
-	d.GetHeadings = displayer.DisplayHeadings
-	d.GetValues = displayer.DisplayValues
+func SetDisplayMethods(h GetDisplayStructer) {
+	d := h.GetDisplayStruct()
+	d.AppendHeadings = h.AppendHeadings
+	d.AppendValues = h.AppendValues
 }
 
 // TODO: Somehow turn this into a writer
@@ -51,7 +69,7 @@ func SetDisplayMethods(displayer Displayer) {
 // Time interval is a setting for at least how many seconds should elapse between value displays
 // HeadingInterval sets how many value displays happen between reprinting the columns
 // D is a displayer which (usually) should be set by the optimization algorithm, though customizations are possible
-type Display struct {
+type DisplayStruct struct {
 	DisplayOn       bool
 	lastValueTime   time.Time     // When was the last real time the values were displayed
 	nValueDisplays  int           // How many displays have there been since the headings were output
@@ -61,14 +79,14 @@ type Display struct {
 	values          []interface{}
 	//headinglengths  []int // For aligning the columns
 	//valuelengths    []int
-	GetHeadings func() []string
-	GetValues   func() []interface{}
+	AppendHeadings func([]string) []string
+	AppendValues   func([]interface{}) []interface{}
 	//D               Displayer
 	//TODO: Add in something about the column widths
 }
 
 // Returns the default settings for the display parameters
-func DefaultDisplay() *Display {
+func DefaultDisplayStruct() *DisplayStruct {
 	// Defaults are for forcing display on the first iteration
 	return &Display{
 		DisplayOn:       true,
@@ -79,7 +97,7 @@ func DefaultDisplay() *Display {
 	}
 }
 
-func (d *Display) GetDisplay() *Display {
+func (d *DisplayStruct) GetDisplayStruct() *DisplayStruct {
 	return d
 }
 
@@ -94,12 +112,14 @@ func (d *Display) SetValues(v []interface{}) {
 */
 
 // Iterate the display. Checks to see if the columns or values should be displayed
-func (d *Display) Iterate() error {
+func (d *DisplayStruct) Iterate() error {
 	if !d.DisplayOn {
 		return nil // Display is off, don't do anything
 	}
-	d.headings = d.GetHeadings()
-	d.values = d.GetValues()
+	headings := make([]string, 0)
+	values := make([]interface{}, 0)
+	d.headings = d.AppendHeadings(headings)
+	d.values = d.AppendValues(values)
 	if len(d.headings) != len(d.values) {
 		return fmt.Errorf("Number of headings and values must match")
 	}
@@ -126,7 +146,7 @@ func (d *Display) Iterate() error {
 }
 
 // Display the headings returned by the displayer
-func (d *Display) Headings() {
+func (d *DisplayStruct) Headings() {
 	fmt.Print("\n")
 	for _, val := range d.headings {
 		fmt.Print(val)
@@ -135,7 +155,7 @@ func (d *Display) Headings() {
 	fmt.Print("\n")
 }
 
-func (d *Display) Values() {
+func (d *DisplayStruct) Values() {
 	for _, val := range d.values {
 		switch val.(type) {
 		case int:

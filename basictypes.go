@@ -2,7 +2,7 @@ package gofunopter
 
 import (
 	"fmt"
-	"github.com/btracey/smatrix"
+	//"github.com/btracey/smatrix"
 	"math"
 )
 
@@ -10,383 +10,501 @@ import (
 
 var _ = fmt.Println
 
-type Iterator interface {
-	Iterate() error
+type BasicConvergence struct {
+	Str string
 }
 
-func Iterate(iterators ...Iterator) (err error) {
-	for _, iterator := range iterators {
-		err := iterator.Iterate()
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+func (b BasicConvergence) ConvergenceType() string {
+	return b.Str
 }
 
-type Converger interface {
-	Converged() string
+type GradConvergence struct{ Str string }
+
+func (b GradConvergence) ConvergenceType() string {
+	return b.Str
 }
 
-func Converged(convergers ...Converger) (str string) {
-	for _, converger := range convergers {
-		str = converger.Converged()
-		if str != "" {
-			return str
-		}
-	}
-	return ""
+type LocConvergence struct{ Str string }
+
+func (b LocConvergence) ConvergenceType() string {
+	return b.Str
 }
 
-type Resulter interface {
-	Result()
+type FunConvergence struct{ Str string }
+
+func (b FunConvergence) ConvergenceType() string {
+	return b.Str
 }
 
-func SetResults(resulters ...Resulter) {
-	for _, resulter := range resulters {
-		resulter.Result()
-	}
+type StepConvergence struct{ Str string }
+
+func (b StepConvergence) ConvergenceType() string {
+	return b.Str
 }
 
 // Counts up and converges if there is a maximum
 type Counter struct {
-	Max   int    // Maximum allowable value of the counter
-	curr  int    // current value of the counter
-	Name  string // Name of this specific counter
-	Total int    // Total number at the end of the optimization run
+	max   int // Maximum allowable value of the counter
+	curr  int // current value of the counter
+	total int // Total number at the end of the optimization run
+	conv  Convergence
+	name  string
 }
+
+func NewCounter(name string, max int, conv Convergence) *Counter {
+	return &Counter{max: max, conv: conv}
+}
+
+func (c *Counter) Max() int {
+	return c.max
+}
+
+func (c *Counter) SetMax(val int) {
+	c.max = val
+}
+
+func (c *Counter) Total() int {
+	return c.total
+}
+
+/*
+func (c *Counter) SetTotal(val int) {
+	c.total = val
+}
+*/
 
 func (c *Counter) Add(delta int) {
 	c.curr += delta
 }
 
-func (c *Counter) Converged() string {
-	if c.curr > c.Max {
-		return "Maximum " + c.Name + "reached"
+//var MaxCounter = &BasicConvergence{"Max counter reached"}
+
+func (c *Counter) Converged() Convergence {
+	// returns a bool because we want to force implementers to make
+	// a better convergence type for whatever they're using the counter for
+	if c.curr > c.max {
+		return c.conv
 	}
-	return ""
+	return nil
 }
 
 func (c *Counter) Result() {
-	c.Total = c.curr
+	c.total = c.curr
 }
 
 func (c *Counter) Curr() int {
 	return c.curr
 }
 
+func (c *Counter) AppendHeadings(strs []string) []string {
+	return append(strs, c.name)
+}
+
+func (c *Counter) AppendValues(vals []interface{}) []interface{} {
+	return append(vals, c.curr)
+}
+
+type BasicHistory struct {
+	save bool
+}
+
+func (b *BasicHistory) Save() bool {
+	return b.save
+}
+
+func (b *BasicHistory) SetSave(val bool) {
+	b.save = val
+}
+
+func DefaultBasicHistory() *BasicHistory {
+	return &BasicHistory{save: false}
+	//return b
+}
+
 // Something about only major iterations?
-type HistoryFloat struct {
+type BasicHistoryFloat struct {
 	hist []float64
-	Save bool
+	*BasicHistory
 }
 
-func (h *HistoryFloat) Get() []float64 {
-	return h.hist
-}
-
-func (h *HistoryFloat) Set(val []float64) {
+func (h *BasicHistoryFloat) Set(val []float64) {
 	h.hist = val
 }
 
-func (h *HistoryFloat) Add(val float64) {
-	if h.Save {
+func (h *BasicHistoryFloat) Get() []float64 {
+	return h.hist
+}
+
+func (h *BasicHistoryFloat) Add(val float64) {
+	if h.Save() {
 		h.hist = append(h.hist, val)
 	}
 }
 
-// A float type which can check tolerances, initialize and save history
-type OptFloat struct {
-	Curr     float64       // current value of the float
-	Init     float64       // initial value of the float
-	absinit  float64       // The absolute value of the initial 
-	Hist     *HistoryFloat // stored history of the float
-	AbsTol   float64       // Tolerance on that value
-	SaveHist bool          // Do you want to save the history. Called save because maybe we want to have a save to file in the future
-	RelTol   float64       // Tolerance relative to the initial value
-	Name     string        // Name of the OptFloat
-	Opt      float64       // Optimal value at the end of the run
-	Disp     bool          // Display this output during teh run if display is on 
+func DefaultHistoryFloat() *BasicHistoryFloat {
+	return &BasicHistoryFloat{hist: make([]float64, 0), BasicHistory: DefaultBasicHistory()}
 }
 
-// Initializes by setting the current value to the initial value and
-// appending it to the history if necessary
-func (o *OptFloat) Initialize() {
-	o.Curr = o.Init
-	o.absinit = math.Abs(o.Init)
-	if o.Hist.Get() == nil {
-		o.Hist.Set(make([]float64, 0))
+type HistorySaverFloatStruct struct {
+	hist HistoryFloat
+}
+
+func (h *HistorySaverFloatStruct) Hist() HistoryFloat {
+	return h.hist
+}
+
+func DefaultHistorySaverFloat() *HistorySaverFloatStruct {
+	return &HistorySaverFloatStruct{hist: DefaultHistoryFloat()}
+}
+
+// Float which implements the curr set getter interface
+type CurrFloatStruct struct {
+	curr float64
+}
+
+func NewCurrFloat() *CurrFloatStruct {
+	return &CurrFloatStruct{}
+}
+
+func (b *CurrFloatStruct) Curr() float64 {
+	return b.curr
+}
+
+func (b *CurrFloatStruct) SetCurr(val float64) {
+	b.curr = val
+}
+
+type InitFloatStruct struct {
+	init float64
+}
+
+func NewInitFloat(val float64) *InitFloatStruct {
+	return &InitFloatStruct{init: val}
+}
+
+func (i *InitFloatStruct) Init() float64 {
+	return i.init
+}
+
+func (i *InitFloatStruct) SetInit(val float64) {
+	i.init = val
+}
+
+type CurrInitFloatStruct struct {
+	InitGetSetterFloat
+	CurrGetSetterFloat
+}
+
+func NewCurrInitFloat(init float64) *CurrInitFloatStruct {
+	return &CurrInitFloatStruct{
+		InitGetSetterFloat: NewInitFloat(init),
+		CurrGetSetterFloat: NewCurrFloat(),
 	}
-	if o.Hist.Save {
-		o.Hist.Add(o.Init)
+}
+
+type AbsTolStruct struct {
+	tol float64
+	CurrGetSetterFloat
+	Convergence
+}
+
+func (b *AbsTolStruct) Tol() float64 {
+	return b.tol
+}
+
+func (b *AbsTolStruct) SetTol(val float64) {
+	b.tol = val
+}
+
+func (b *AbsTolStruct) Converged() Convergence {
+	if b.Curr() < b.tol {
+		return b.Convergence
 	}
-
+	return nil
 }
 
-// Make hist return a copy? Have a CopyHist method?
-
-func (o *OptFloat) Converged() string {
-	if math.Abs(o.Curr) < o.AbsTol {
-		return o.Name + " absolute tolerance reached"
+func NewAbsTol(tol float64, c Convergence) *AbsTolStruct {
+	return &AbsTolStruct{
+		tol:         tol,
+		Convergence: c,
 	}
-	if math.Abs(o.Curr)/o.absinit < o.RelTol {
-		return o.Name + " relative tolerance reached"
+}
+
+type RelTolStruct struct {
+	tol float64
+	CurrInitGetSetterFloat
+	Convergence
+}
+
+func NewRelTol(tol float64, c Convergence) *RelTolStruct {
+	return &RelTolStruct{
+		tol:         tol,
+		Convergence: c,
 	}
-	return ""
 }
 
-func (o *OptFloat) Result() {
-	o.Opt = o.Curr
+func (b *RelTolStruct) Tol() float64 {
+	return b.tol
 }
 
-func (o *OptFloat) DisplayHeadings() []string {
-	return []string{o.Name}
+func (b *RelTolStruct) SetTol(val float64) {
+	b.tol = val
 }
 
-func (o *OptFloat) DisplayValues() []interface{} {
-	return []interface{}{o.Curr}
+func (b *RelTolStruct) Converged() Convergence {
+	if b.Curr()/b.Init() < b.tol {
+		return b.Convergence
+	}
+	return nil
 }
+
+var LocAbsTol Convergence = LocConvergence{"Location absolute tolerance reached"}
+var LocRelTol Convergence = LocConvergence{"Location relative tolerance reached"}
+var ObjAbsTol Convergence = FunConvergence{"Function absolute tolerance reached"}
+var ObjRelTol Convergence = FunConvergence{"Function relative tolerance reached"}
+var GradAbsTol Convergence = GradConvergence{"Gradient absolute tolerance reached"}
+var GradRelTol Convergence = GradConvergence{"Gradient relative tolerance reached"}
 
 // Returns the default values for an input location
 // Locations don't have any tolerances
-
-type LocationFloat struct {
-	*OptFloat
+type LocationFloatStruct struct {
+	CurrInitGetSetterFloat
+	HistorySaverFloat
+	Displayer
 }
 
-func DefaultLocationFloat() *LocationFloat {
-	return &LocationFloat{
-		OptFloat: &OptFloat{
-			AbsTol:   math.Inf(-1),
-			RelTol:   math.Inf(-1),
-			Name:     "loc",
-			SaveHist: false,
-			Init:     0,
-			Disp:     true,
-			Hist:     &HistoryFloat{},
-		},
+/*
+func (c *LocationFloatStruct) Initialize() error {
+	c.SetCurr(c.Init())
+	return nil
+}
+*/
+
+func (b *LocationFloatStruct) Converged() Convergence {
+	return nil
+}
+
+func (c *LocationFloatStruct) Initialize() error {
+	c.SetCurr(c.Init())
+	return nil
+}
+
+func (l *LocationFloatStruct) AppendHeadings(vals []string) []string {
+	return append(vals, "Loc")
+}
+
+func (l *LocationFloatStruct) AppendValues(vals []interface{}) []interface{} {
+	return append(vals, l.Curr())
+}
+
+// Gets AppendValues from CurrFloat
+
+func DefaultLocationFloat() *LocationFloatStruct {
+	return &LocationFloatStruct{
+		Displayer:         NewDisplay(false),
+		HistorySaverFloat: DefaultHistorySaverFloat(),
 	}
 }
 
-// Returns the default values for an objective
-// Objectives generally don't have any tolerances
-// No idea what the initial function value is
-
-type ObjectiveFloat struct {
-	*OptFloat
+func NewAbsRelTolStruct(init float64, abstol float64, absConv Convergence, reltol float64, relConv Convergence) (CurrInitGetSetterFloat, AbsTol, RelTol) {
+	absTol := NewAbsTol(abstol, absConv)
+	relTol := NewRelTol(reltol, relConv)
+	currInit := NewCurrInitFloat(init)
+	absTol.CurrGetSetterFloat = currInit
+	relTol.CurrInitGetSetterFloat = currInit
+	return currInit, absTol, relTol
 }
 
-func DefaultObjectiveFloat() *ObjectiveFloat {
-	o := &ObjectiveFloat{
-		OptFloat: &OptFloat{
-			AbsTol:   math.Inf(-1),
-			RelTol:   math.Inf(-1),
-			Name:     "fun",
-			SaveHist: false,
-			Init:     math.NaN(),
-			Curr:     math.NaN(),
-			Disp:     true,
-			Hist:     &HistoryFloat{},
-		},
-	}
+type ObjectiveFloatStruct struct {
+	CurrInitGetSetterFloat
+	abstol AbsTol
+	reltol RelTol
+	HistorySaverFloat
+	Displayer
+}
+
+func (c *ObjectiveFloatStruct) Initialize() error {
+	c.SetCurr(c.Init())
+	return nil
+}
+
+func DefaultObjectiveFloat() *ObjectiveFloatStruct {
+	o := &ObjectiveFloatStruct{}
+	o.CurrInitGetSetterFloat, o.abstol, o.reltol = NewAbsRelTolStruct(math.NaN(), 0, ObjAbsTol, 0, ObjRelTol)
+	o.HistorySaverFloat = DefaultHistorySaverFloat()
 	return o
 }
 
-type GradientFloat struct {
-	*OptFloat
+func (b *ObjectiveFloatStruct) AbsTol() AbsTol {
+	return b.abstol
 }
 
-// Returns the default values for the gradient
-func DefaultGradientFloat() *GradientFloat {
-	return &GradientFloat{
-		OptFloat: &OptFloat{
-			AbsTol:   1E-6,
-			RelTol:   1E-8,
-			Name:     "grad",
-			SaveHist: false,
-			Init:     math.NaN(),
-			Curr:     math.NaN(),
-			Disp:     true,
-			Hist:     &HistoryFloat{},
-		},
-	}
+func (b *ObjectiveFloatStruct) RelTol() RelTol {
+	return b.reltol
 }
 
-type BoundedFloat struct {
-	*OptFloat
-	Lb         float64
-	Ub         float64
-	DispBounds bool
+func (l *ObjectiveFloatStruct) AppendHeadings(vals []string) []string {
+	return append(vals, "Obj")
 }
 
-func (s *BoundedFloat) DisplayHeadings() []string {
-	strs := s.OptFloat.DisplayHeadings()
-	if s.DispBounds {
-		strs = append(strs, s.Name+"LB", s.Name+"UB")
-	}
-	return strs
+func (l *ObjectiveFloatStruct) AppendValues(vals []interface{}) []interface{} {
+	return append(vals, l.Curr())
 }
 
-func (s *BoundedFloat) DisplayValues() []interface{} {
-	vals := s.OptFloat.DisplayValues()
-	if s.DispBounds {
-		vals = append(vals, s.Lb, s.Ub)
-	}
-	return vals
+func (o *ObjectiveFloatStruct) Converged() Convergence {
+	return Converged(o.AbsTol(), o.RelTol())
+}
+
+type GradientFloatStruct struct {
+	CurrInitGetSetterFloat
+	abstol AbsTol
+	reltol RelTol
+	HistorySaverFloat
+	Displayer
+}
+
+func (g *GradientFloatStruct) Converged() Convergence {
+	return Converged(g.abstol, g.reltol)
+}
+
+const DefaultGradAbsTol = 1E-6
+const DefaultGradRelTol = 1E-8
+
+func DefaultGradientFloat() *GradientFloatStruct {
+	o := &GradientFloatStruct{}
+	o.CurrInitGetSetterFloat, o.abstol, o.reltol = NewAbsRelTolStruct(math.NaN(), DefaultGradAbsTol, GradAbsTol, DefaultGradRelTol, GradRelTol)
+	o.HistorySaverFloat = DefaultHistorySaverFloat()
+	return o
+}
+
+func (c *GradientFloatStruct) Initialize() error {
+	c.SetCurr(c.Init())
+	return nil
+}
+
+func (b *GradientFloatStruct) AbsTol() AbsTol {
+	return b.abstol
+}
+
+func (b *GradientFloatStruct) RelTol() RelTol {
+	return b.reltol
+}
+
+func (l *GradientFloatStruct) AppendHeadings(vals []string) []string {
+	return append(vals, "Grad")
+}
+
+func (l *GradientFloatStruct) AppendValues(vals []interface{}) []interface{} {
+	return append(vals, math.Abs(l.Curr()))
+}
+
+// TODO: Implement display bounds
+type BoundsFloatStruct struct {
+	lb float64
+	ub float64
+	CurrInitGetSetterFloat
+	abstol AbsTol
+	reltol RelTol
+	Name   string
+	Displayer
+}
+
+func NewBoundsFloat(name string, lb, ub, abstol float64, absconv Convergence, reltol float64, relconv Convergence) *BoundsFloatStruct {
+	b := &BoundsFloatStruct{}
+	b.lb = math.Inf(-1)
+	b.ub = math.Inf(1)
+	b.CurrInitGetSetterFloat, b.abstol, b.reltol = NewAbsRelTolStruct(b.ub-b.lb, abstol, absconv, reltol, relconv)
+	b.Name = name
+	b.Displayer = NewDisplay(false)
+	return b
+}
+
+func (b *BoundsFloatStruct) AbsTol() AbsTol {
+	return b.abstol
+}
+
+func (b *BoundsFloatStruct) RelTol() RelTol {
+	return b.reltol
+}
+
+func (s *BoundsFloatStruct) Lb() float64 {
+	return s.lb
+}
+
+func (s *BoundsFloatStruct) Ub() float64 {
+	return s.ub
+}
+
+func (s *BoundsFloatStruct) SetLb(val float64) {
+	s.lb = val
+	s.SetCurr(s.ub - s.lb)
+}
+
+func (s *BoundsFloatStruct) SetUb(val float64) {
+	s.ub = val
+	s.SetCurr(s.ub - s.lb)
+}
+
+func (s *BoundsFloatStruct) AppendHeadings(strs []string) []string {
+	return append(strs, s.Name+"LB", s.Name+"UB")
+}
+
+func (s *BoundsFloatStruct) AppendValues(vals []interface{}) []interface{} {
+	return append(vals, s.lb, s.lb)
 }
 
 // Midpoint between the bounds
-func (s *BoundedFloat) Midpoint() float64 {
-	return (s.Lb + s.Ub) / 2.0
+func (s *BoundsFloatStruct) Midpoint() float64 {
+	return (s.lb + s.ub) / 2.0
 }
 
 // Is the value between the upper and lower bounds
-func (s *BoundedFloat) WithinBounds(val float64) bool {
-	if val < s.Lb {
+func (s *BoundsFloatStruct) WithinBounds(val float64) bool {
+	if val < s.lb {
 		return false
 	}
-	if val > s.Ub {
+	if val > s.ub {
 		return false
 	}
 	return true
 }
 
-func (s *BoundedFloat) Converged() string {
-	if (s.Ub - s.Lb) < s.AbsTol {
-		return s.Name + " absolute tolerance reached"
-	}
-	return ""
+//var BoundgapAbsTol Convergence = BasicConvergence{"Bound gap absolute tolerance reached"}
+
+func (s *BoundsFloatStruct) Converged() Convergence {
+	return Converged(s.AbsTol(), s.RelTol())
 }
 
-//TODO: Change this to have a real default bounded float rather than just the step
+var StepAbsTol Convergence = StepConvergence{"Step absolute tolerance reached"}
+var StepRelTol Convergence = StepConvergence{"Step relative tolerance reached"}
+var StepBoundsAbsTol Convergence = StepConvergence{"Step bounds absolute tolerance reached"}
+var StepBoundsRelTol Convergence = StepConvergence{"Step bounds absolute tolerance reached"}
 
+type BoundedStepFloatStruct struct {
+	CurrInitGetSetterFloat
+	HistorySaverFloat
+	Displayer
+	*BoundsFloatStruct
+}
+
+func (s *BoundedStepFloatStruct) Initialize() error {
+	return nil
+}
+
+const DefaultInitStepSize = 1
+const DefaultBoundedStepFloatAbsTol = 0 //
+const DefaultBoundedStepFloatRelTol = 0 // Turn off step rel tol
 // Returns the default values for a step size
 // no default relative tolerance
-func DefaultStepFloat() *BoundedFloat {
-	return &BoundedFloat{
-		OptFloat: &OptFloat{
-			AbsTol:   1E-6,
-			RelTol:   math.Inf(-1),
-			Name:     "step",
-			SaveHist: false,
-			Init:     1,
-			Disp:     true,
-			Hist:     &HistoryFloat{},
-		},
-		Lb:         math.Inf(-1),
-		Ub:         math.Inf(1),
-		DispBounds: false,
+func DefaultBoundedStepFloat() *BoundedStepFloatStruct {
+	return &BoundedStepFloatStruct{
+		CurrInitGetSetterFloat: NewCurrInitFloat(DefaultInitStepSize),
+		HistorySaverFloat:      DefaultHistorySaverFloat(),
+		Displayer:              NewDisplay(false),
+		BoundsFloatStruct:      NewBoundsFloat("Step", math.Inf(-1), math.Inf(1), DefaultBoundedStepFloatAbsTol, StepBoundsAbsTol, DefaultBoundedStepFloatRelTol, StepBoundsRelTol),
 	}
 }
 
-// Something about only major iterations?
-type HistoryFloatSlice struct {
-	hist [][]float64
-	Save bool
-}
-
-func (h *HistoryFloatSlice) Get() [][]float64 {
-	return h.hist
-}
-
-func (h *HistoryFloatSlice) Set(val [][]float64) {
-	h.hist = val
-}
-
-func (h *HistoryFloatSlice) Add(val []float64) {
-	// Make a copy in case the pointer changes
-	if h.Save {
-		newVal := make([]float64, len(val))
-		copy(newVal, val)
-		h.hist = append(h.hist, newVal)
-	}
-}
-
-// A float type which can check tolerances, initialize and save history
-type OptFloatSlice struct {
-	Curr     []float64          // current value of the float
-	Init     []float64          // initial value of the float
-	norminit float64            // The norm of the initial point
-	Hist     *HistoryFloatSlice // stored history of the float
-	AbsTol   float64            // Tolerance on the norm of the value
-	SaveHist bool               // Do you want to save the history. Called save because maybe we want to have a save to file in the future
-	RelTol   float64            // Tolerance relative to the norm of the initial value
-	Name     string             // Name of the OptFloat
-	Opt      []float64          // Optimal value at the end of the run
-	Disp     bool               // Display this output during teh run if display is on 
-}
-
-// Initializes by setting the current value to the initial value and
-// appending it to the history if necessary
-func (o *OptFloatSlice) Initialize() {
-	newInit := make([]float64, len(o.Curr))
-	o.Curr = newInit
-	o.norminit = smatrix.VectorTwoNorm(o.Init)
-	if o.Hist.Get() == nil {
-		o.Hist.Set(make([][]float64, 0))
-	}
-	if o.Hist.Save {
-		o.Hist.Add(newInit)
-	}
-
-}
-
-// Make hist return a copy? Have a CopyHist method?
-
-func (o *OptFloatSlice) Converged() string {
-	norm := smatrix.VectorTwoNorm(o.Curr)
-	if norm < o.AbsTol {
-		return o.Name + " absolute tolerance reached"
-	}
-	if norm/o.norminit < o.RelTol {
-		return o.Name + " relative tolerance reached"
-	}
-	return ""
-}
-
-func (o *OptFloatSlice) Result() {
-	o.Opt = o.Curr
-}
-
-func (o *OptFloatSlice) DisplayHeadings() []string {
-	return []string{o.Name}
-}
-
-func (o *OptFloatSlice) DisplayValues() []interface{} {
-	return []interface{}{smatrix.VectorTwoNorm(o.Curr)}
-}
-
-type LocationFloatSlice struct {
-	*OptFloatSlice
-}
-
-func DefaultLocationFloatSlice() *LocationFloatSlice {
-	return &LocationFloatSlice{
-		OptFloatSlice: &OptFloatSlice{
-			AbsTol:   math.Inf(-1),
-			RelTol:   math.Inf(-1),
-			Name:     "loc",
-			SaveHist: false,
-			Disp:     true,
-			Hist:     &HistoryFloatSlice{},
-		},
-	}
-}
-
-type GradientFloatSlice struct {
-	*OptFloatSlice
-}
-
-// Returns the default values for the gradient
-func DefaultGradientFloatSlice() *GradientFloatSlice {
-	return &GradientFloatSlice{
-		OptFloatSlice: &OptFloatSlice{
-			AbsTol:   1E-6,
-			RelTol:   1E-8,
-			Name:     "grad",
-			SaveHist: false,
-			Disp:     true,
-			Hist:     &HistoryFloatSlice{},
-		},
-	}
-}
+//func (b *BoundedStepFloatStruct) Converged() Convergence {
+//	return Converged(c.BoundsFloatStruct)
+//}

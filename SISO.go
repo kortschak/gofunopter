@@ -1,16 +1,6 @@
 package gofunopter
 
 // Single input single output
-type SISOProblem interface {
-	InputFloat
-	OutputFloat
-}
-
-// Gradient based SISO
-type SISOGradBasedProblem interface {
-	SISOProblem
-	GradientFloat
-}
 
 // Not sure if we want to do this. Makes individual implementations
 // much easier, but also harder to read. 

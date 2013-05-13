@@ -9,11 +9,11 @@ import (
 // SISOGradBased, etc. That way have SISO.Optimizable?
 
 type Cubic struct {
-	// Basic values
-	Loc  *LocationFloat  // Location
-	Obj  *ObjectiveFloat // Function Value
-	Grad *GradientFloat  // Gradient value
-	Step *BoundedFloat   // Step size
+	// Basic values (should these be interfaces?)
+	Loc  LocationFloat    // Location
+	Obj  ObjectiveFloat   // Function Value
+	Grad GradientFloat    // Gradient value
+	Step BoundedStepFloat // Step size
 	*Common
 	Fun SISOGradBasedProblem
 
@@ -35,7 +35,7 @@ func DefaultCubic() *Cubic {
 		Loc:             DefaultLocationFloat(),
 		Obj:             DefaultObjectiveFloat(),
 		Grad:            DefaultGradientFloat(),
-		Step:            DefaultStepFloat(),
+		Step:            DefaultBoundedStepFloat(),
 		StepDecreaseMin: 1E-4,
 		StepDecreaseMax: 0.9,
 		StepIncreaseMin: 1.25,
@@ -53,25 +53,24 @@ func (c *Cubic) Initialize() (err error) {
 	c.Common.Initialize()
 	c.Loc.Initialize()
 	fmt.Println("initialize")
-	fmt.Println(c.Obj.Init)
-	if math.IsNaN(c.Obj.Init) || math.IsNaN(c.Grad.Curr) {
+	fmt.Println(c.Obj.Init())
+	if math.IsNaN(c.Obj.Init()) || math.IsNaN(c.Grad.Curr()) {
 		fmt.Println("In isnan")
 		// Initial function value hasn't been set, so do it.
-		err = c.Fun.Eval(c.Loc.Init)
+		err = c.Fun.Eval(c.Loc.Init())
 		if err != nil {
 			return fmt.Errorf("Error evaluating the function at the set initial value %v", c.Loc.Curr)
 		}
 		c.FunEvals.Add(1)
-		c.Obj.Init = c.Fun.Obj()
-		c.Grad.Init = c.Fun.Grad()
+		c.Obj.SetInit(c.Fun.Obj())
+		c.Grad.SetInit(c.Fun.Grad())
 	}
 	c.Obj.Initialize()
 	c.Grad.Initialize()
-	if c.Step.Init <= 0 {
+	if c.Step.Init() <= 0 {
 		return fmt.Errorf("Initial step must be positive")
 	}
-	c.Step.Initialize()
-	c.initialGradNegative = (c.Grad.Curr < 0)
+	c.initialGradNegative = (c.Grad.Curr() < 0)
 	c.currStepDirectionPositive = true
 	c.deltaCurrent = 0.0 // How far is the current point from the initial point
 
@@ -79,27 +78,22 @@ func (c *Cubic) Initialize() (err error) {
 	return nil
 }
 
-func (c *Cubic) Converged() string {
-	fmt.Println(c.Grad)
-	str := Converged(c.Loc, c.Obj, c.Grad, c.Step)
-	fmt.Println(str)
-	fmt.Println(c.Grad.Curr)
-	fmt.Println(c.Grad.AbsTol)
-	if str != "" {
-		return str
+func (c *Cubic) Converged() Convergence {
+	conv := Converged(c.Loc, c.Obj, c.Grad, c.Step)
+	if conv != nil {
+		return conv
 	}
 	s, ok := c.Fun.(Converger)
 	if ok {
-		str := s.Converged()
-		if str != "" {
-			return str
+		conv = s.Converged()
+		if conv != nil {
+			return conv
 		}
 	}
-	return ""
+	return nil
 }
 
-func (c *Cubic) DisplayHeadings() []string {
-	headings := make([]string, 10)
+func (c *Cubic) AppendHeadings(headings []string) []string {
 	headings = AppendHeadings(headings, c.Common, c.Loc, c.Obj, c.Grad, c.Step)
 	s, ok := c.Fun.(Displayable)
 	if ok {
@@ -108,11 +102,10 @@ func (c *Cubic) DisplayHeadings() []string {
 	return headings
 }
 
-func (c *Cubic) DisplayValues() []interface{} {
-	values := make([]interface{}, 10)
+func (c *Cubic) AppendValues(values []interface{}) []interface{} {
 	values = AppendValues(values, c.Common)
-	values = append(values, c.Grad.Curr, c.Step.Curr)
-	s, ok := c.Fun.(Displayer)
+	values = append(values, c.Grad.Curr(), c.Step.Curr)
+	s, ok := c.Fun.(Displayable)
 	if ok {
 		values = AppendValues(values, s)
 	}
@@ -133,7 +126,7 @@ func (cubic *Cubic) Iterate() (err error) {
 	var stepMultiplier float64
 	updateCurrPoint := false
 	reverseDirection := false
-	currG := cubic.Grad.Curr
+	currG := cubic.Grad.Curr()
 	currF := cubic.Obj.Curr
 
 	// Evaluate trial point
@@ -163,7 +156,7 @@ func (cubic *Cubic) Iterate() (err error) {
 		fmt.Println("initX", cubic.Loc.Init)
 		fmt.Println("currX", cubic.Loc.Curr)
 		fmt.Println("trialX", trialX)
-		fmt.Println("InitF", cubic.Obj.Init)
+		fmt.Println("InitF", cubic.Obj.Init())
 		fmt.Println("currF", currF)
 		fmt.Println("trialF", trialF)
 		fmt.Println("InitG", cubic.Grad.Init)
@@ -321,7 +314,7 @@ func (cubic *Cubic) Iterate() (err error) {
 
 		cubic.Loc.Curr = trialX
 		cubic.Obj.Curr = trialF
-		cubic.Grad.Curr = trialG
+		cubic.Grad.Curr() = trialG
 		cubic.deltaCurrent = trialX - cubic.Loc.Init
 		if cubic.initialGradNegative {
 			cubic.deltaCurrent *= -1

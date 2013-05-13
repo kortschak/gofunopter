@@ -1,13 +1,6 @@
 package gofunopter
 
-type Optimizer interface {
-	Converged() string
-	Initialize() error
-	Result()
-	Iterate() error
-}
-
-func Optimize(o Optimizer) (str string, err error) {
+func Optimize(o Optimizer) (c Convergence, err error) {
 	// Add in some check about nil pointers and such
 	err = o.Initialize()
 	if err != nil {
