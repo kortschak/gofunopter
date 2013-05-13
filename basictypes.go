@@ -254,6 +254,16 @@ func (b *BasicTolFloat) RelTol() float64 {
 	return b.relTol
 }
 
+func (b *BasicTolFloat) Initialize() error {
+	err := b.BasicOptFloat.Initialize()
+	if err != nil {
+		return err
+	}
+	b.absCurr = math.Abs(b.curr)
+	b.absInit = math.Abs(b.init)
+	return nil
+}
+
 func (b *BasicTolFloat) Converged() Convergence {
 	if b.absCurr < b.absTol {
 		return b.absTolConv
@@ -309,10 +319,14 @@ func NewBasicBoundsFloat(name string, disp bool, init float64, absTol float64,
 }
 
 func (s *BasicBoundsFloat) Initialize() error {
+	s.curr = s.init
 	s.initGap = s.ub - s.lb
 	s.gap = s.ub - s.lb
 	if s.initGap < 0 {
 		return fmt.Errorf("Lower bound is greater than upper bound")
+	}
+	if s.curr <= 0 {
+		return fmt.Errorf("Initial step size must be positive")
 	}
 	return nil
 }

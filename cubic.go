@@ -52,10 +52,7 @@ func (c *Cubic) Initialize() (err error) {
 	// the information is already there
 	c.Common.Initialize()
 	c.Loc.Initialize()
-	fmt.Println("initialize")
-	fmt.Println(c.Obj.Init())
 	if math.IsNaN(c.Obj.Init()) || math.IsNaN(c.Grad.Curr()) {
-		fmt.Println("In isnan")
 		// Initial function value hasn't been set, so do it.
 		err = c.Fun.Eval(c.Loc.Init())
 		if err != nil {
@@ -70,10 +67,10 @@ func (c *Cubic) Initialize() (err error) {
 	if c.Step.Init() <= 0 {
 		return fmt.Errorf("Initial step must be positive")
 	}
+	c.Step.Initialize()
 	c.initialGradNegative = (c.Grad.Curr() < 0)
 	c.currStepDirectionPositive = true
 	c.deltaCurrent = 0.0 // How far is the current point from the initial point
-
 	// Add in some checking on the Step Increase and decrease sizes
 	return nil
 }
@@ -121,7 +118,6 @@ type CubicResult struct {
 }
 
 func (cubic *Cubic) Iterate() (err error) {
-
 	// Initialize
 	var stepMultiplier float64
 	updateCurrPoint := false
@@ -150,20 +146,19 @@ func (cubic *Cubic) Iterate() (err error) {
 	cubic.Loc.AddToHist(trialG)
 
 	/*
-		fmt.Println("curr step size", cubic.Step.Curr)
-		fmt.Println("LB", cubic.Step.Lb)
-		fmt.Println("UB", cubic.Step.Ub)
-		fmt.Println("initX", cubic.Loc.Init)
-		fmt.Println("currX", cubic.Loc.Curr)
+		fmt.Println("curr step size", cubic.Step.Curr())
+		fmt.Println("LB", cubic.Step.Lb())
+		fmt.Println("UB", cubic.Step.Ub())
+		fmt.Println("initX", cubic.Loc.Init())
+		fmt.Println("currX", cubic.Loc.Curr())
 		fmt.Println("trialX", trialX)
 		fmt.Println("InitF", cubic.Obj.Init())
 		fmt.Println("currF", currF)
 		fmt.Println("trialF", trialF)
-		fmt.Println("InitG", cubic.Grad.Init)
+		fmt.Println("InitG", cubic.Grad.Init())
 		fmt.Println("currG", currG)
 		fmt.Println("trialG", trialG)
 	*/
-
 	//cubic.AddToHist(trialX, trialF,trialG)
 	absTrialG := math.Abs(trialG)
 
@@ -323,6 +318,7 @@ func (cubic *Cubic) Iterate() (err error) {
 			cubic.currStepDirectionPositive = !cubic.currStepDirectionPositive
 		}
 	}
+	//panic("wa")
 	cubic.Step.SetCurr(newStepSize)
 	return nil
 }

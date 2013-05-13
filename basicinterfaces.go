@@ -4,21 +4,6 @@ type Convergence interface {
 	ConvergenceType() string
 }
 
-type Optimizer interface {
-	Converger
-	Initializer
-	SetResulter
-	Iterator
-}
-
-type SISOGradBasedOptimizer interface {
-	Optimizer
-	Loc() OptFloat
-	Obj() OptTolFloat
-	Grad() OptTolFloat
-	Fun() MISOGradBasedProblem
-}
-
 /*
 type MISOGradBasedOptimizer interface {
 	Optimizer
