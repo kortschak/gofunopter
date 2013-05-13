@@ -53,24 +53,24 @@ type ConstraintFloatSlice interface {
 	Constr() []float64 // Returns a vector of all the constraint violations
 }
 
-type SISOProblem interface {
+type SisoProblem interface {
 	InputFloat
 	OutputFloat
 }
 
 // Gradient based SISO
-type SISOGradBasedProblem interface {
-	SISOProblem
+type SisoGradBasedProblem interface {
+	SisoProblem
 	GradientFloat
 }
 
-type MISOProblem interface {
+type MisoProblem interface {
 	InputFloatSlice
 	OutputFloat
 }
 
-type MISOGradBasedProblem interface {
-	MISOProblem
+type MisoGradBasedProblem interface {
+	MisoProblem
 	GradientFloatSlice
 }
 

@@ -30,12 +30,12 @@ type Optimizer interface {
 	Iterator
 }
 
-type SISOGradBasedOptimizer interface {
+type SisoGradBasedOptimizer interface {
 	Optimizer
-	Loc() OptFloat
-	Obj() OptTolFloat
-	Grad() OptTolFloat
-	Fun() MISOGradBasedProblem
+	Location() OptFloat
+	Objective() OptTolFloat
+	Gradient() OptTolFloat
+	Function() MisoGradBasedProblem
 }
 
 // TODO: Add in some mechanism for "Default" optimization selection

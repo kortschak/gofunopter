@@ -15,7 +15,7 @@ type Cubic struct {
 	Grad OptTolFloat     // Gradient value
 	Step BoundedOptFloat // Step size
 	*Common
-	Fun SISOGradBasedProblem
+	Fun SisoGradBasedProblem
 
 	// Tunable parameters
 	StepDecreaseMin float64 // Minimum allowable decrease (must be a number between [0,1)) default 0.0001
@@ -28,6 +28,22 @@ type Cubic struct {
 	currStepDirectionPositive bool
 	initialGradNegative       bool
 	deltaCurrent              float64
+}
+
+func (c *Cubic) Location() OptFloat {
+	return c.Loc
+}
+
+func (c *Cubic) Objective() OptTolFloat {
+	return c.Obj
+}
+
+func (c *Cubic) Gradient() OptTolFloat {
+	return c.Obj
+}
+
+func (c *Cubic) Function() SisoGradBasedProblem {
+	return c.Fun
 }
 
 func DefaultCubic() *Cubic {
