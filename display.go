@@ -24,31 +24,9 @@ func AppendHeadings(headings []string, displayables ...Displayable) []string {
 
 type Displayer interface {
 	Disp() bool
-	SetDisp(bool)
-}
-
-type BasicDisplayer struct {
-	disp bool
-}
-
-func (b *BasicDisplayer) Disp() bool {
-	return b.disp
-}
-
-func (b *BasicDisplayer) SetDisp(val bool) {
-	b.disp = val
-}
-
-func NewDisplay(val bool) *BasicDisplayer {
-	return &BasicDisplayer{disp: val}
-}
-
-// Something which can display values
-type Displayable interface {
 	AppendHeadings([]string) []string
 	AppendValues([]interface{}) []interface{}
-	Disp() bool
-	//Display() *Display
+	SetDisp(bool)
 }
 
 type GetDisplayStructer interface {
@@ -101,16 +79,6 @@ func (d *DisplayStruct) GetDisplayStruct() *DisplayStruct {
 	return d
 }
 
-/*
-func (d *Display) SetHeadings(s []string) {
-	d.headings = s
-}
-
-func (d *Display) SetValues(v []interface{}) {
-	d.values = v
-}
-*/
-
 // Iterate the display. Checks to see if the columns or values should be displayed
 func (d *DisplayStruct) Iterate() error {
 	if !d.DisplayOn {
@@ -123,13 +91,6 @@ func (d *DisplayStruct) Iterate() error {
 	if len(d.headings) != len(d.values) {
 		return fmt.Errorf("Number of headings and values must match")
 	}
-	//if cap(d.headinglengths) < len(d.headings) {
-	//	d.headinglengths = make([]int, len(d.headings))
-	//}
-	//if cap(d.valuelengths) < len(d.values) {
-
-	//}
-	// Find how many characters it would take to display each of the things
 
 	// First, check if the headings need to be set
 	if d.nValueDisplays >= d.HeadingInterval {

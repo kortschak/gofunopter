@@ -10,9 +10,9 @@ import (
 
 type Cubic struct {
 	// Basic values (should these be interfaces?)
-	Loc  LocationFloat    // Location
-	Obj  ObjectiveFloat   // Function Value
-	Grad GradientFloat    // Gradient value
+	Loc  OptFloat         // Location
+	Obj  OptTolFloat      // Function Value
+	Grad OptTolFloat      // Gradient value
 	Step BoundedStepFloat // Step size
 	*Common
 	Fun SISOGradBasedProblem

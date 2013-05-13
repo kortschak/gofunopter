@@ -63,16 +63,6 @@ func (c *Counter) SetMax(val int) {
 	c.max = val
 }
 
-func (c *Counter) Total() int {
-	return c.total
-}
-
-/*
-func (c *Counter) SetTotal(val int) {
-	c.total = val
-}
-*/
-
 func (c *Counter) Add(delta int) {
 	c.curr += delta
 }
@@ -88,12 +78,16 @@ func (c *Counter) Converged() Convergence {
 	return nil
 }
 
-func (c *Counter) Result() {
+func (c *Counter) SetOpt() {
 	c.total = c.curr
 }
 
 func (c *Counter) Curr() int {
 	return c.curr
+}
+
+func (c *Counter) Opt() int {
+	return c.total
 }
 
 func (c *Counter) AppendHeadings(strs []string) []string {
@@ -104,121 +98,137 @@ func (c *Counter) AppendValues(vals []interface{}) []interface{} {
 	return append(vals, c.curr)
 }
 
-type BasicHistory struct {
+// All the normal methods minus the tols
+type BasicOptFloat struct {
 	save bool
+	curr float64
+	init float64
+	hist []float64
+	disp bool
+	name string
+	opt  float64
 }
 
-func (b *BasicHistory) Save() bool {
+func NewBasicOptFloat(name string, disp bool, init float64) *BasicOptFloat {
+	return &BasicOptFloat{
+		name: name,
+		disp: disp,
+		init: init,
+	}
+}
+
+func (b *BasicOptFloat) Disp() bool {
+	return b.disp
+}
+
+func (b *BasicOptFloat) SetDisp(val bool) {
+	b.disp = val
+}
+
+func (b *BasicOptFloat) Save() float64 {
 	return b.save
 }
 
-func (b *BasicHistory) SetSave(val bool) {
+func (b *BasicOptFloat) SetSave(val bool) {
 	b.save = val
 }
 
-func DefaultBasicHistory() *BasicHistory {
-	return &BasicHistory{save: false}
-	//return b
+func (b *BasicOptFloat) AddToHist(val float64) {
+	b.hist = append(b.hist, val)
 }
 
-// Something about only major iterations?
-type BasicHistoryFloat struct {
-	hist []float64
-	*BasicHistory
-}
-
-func (h *BasicHistoryFloat) Set(val []float64) {
-	h.hist = val
-}
-
-func (h *BasicHistoryFloat) Get() []float64 {
-	return h.hist
-}
-
-func (h *BasicHistoryFloat) Add(val float64) {
-	if h.Save() {
-		h.hist = append(h.hist, val)
-	}
-}
-
-func DefaultHistoryFloat() *BasicHistoryFloat {
-	return &BasicHistoryFloat{hist: make([]float64, 0), BasicHistory: DefaultBasicHistory()}
-}
-
-type HistorySaverFloatStruct struct {
-	hist HistoryFloat
-}
-
-func (h *HistorySaverFloatStruct) Hist() HistoryFloat {
-	return h.hist
-}
-
-func DefaultHistorySaverFloat() *HistorySaverFloatStruct {
-	return &HistorySaverFloatStruct{hist: DefaultHistoryFloat()}
-}
-
-// Float which implements the curr set getter interface
-type CurrFloatStruct struct {
-	curr float64
-}
-
-func NewCurrFloat() *CurrFloatStruct {
-	return &CurrFloatStruct{}
-}
-
-func (b *CurrFloatStruct) Curr() float64 {
+func (b *BasicOptFloat) Curr() float64 {
 	return b.curr
 }
 
-func (b *CurrFloatStruct) SetCurr(val float64) {
+func (b *BasicOptFloat) SetCurr(val float64) float64 {
 	b.curr = val
 }
 
-type InitFloatStruct struct {
-	init float64
+func (b *BasicOptFloat) Init() float64 {
+	return b.init
 }
 
-func NewInitFloat(val float64) *InitFloatStruct {
-	return &InitFloatStruct{init: val}
+func (b *BasicOptFloat) SetInit(val float64) {
+	b.init = val
 }
 
-func (i *InitFloatStruct) Init() float64 {
-	return i.init
+func (b *BasicOptFloat) Initialize() error {
+	b.save = make([]float64, 0)
+	b.curr = b.init
+}
+func (b *BasicOptFloat) Converged() Convergence {
+	return nil
 }
 
-func (i *InitFloatStruct) SetInit(val float64) {
-	i.init = val
+func (b *BasicOptFloat) AppendHeadings(headings []string) []string {
+	headings = append(headings, b.name)
 }
 
-type CurrInitFloatStruct struct {
-	InitGetSetterFloat
-	CurrGetSetterFloat
+func (b *BasicOptFloat) AppendValues(vals []interface{}) []interface{} {
+	vals = append(vals, b.curr)
 }
 
-func NewCurrInitFloat(init float64) *CurrInitFloatStruct {
-	return &CurrInitFloatStruct{
-		InitGetSetterFloat: NewInitFloat(init),
-		CurrGetSetterFloat: NewCurrFloat(),
+func (b *BasicOptFloat) SetResult() {
+	b.opt = b.curr
+}
+
+func (b *BasicOptFloat) Opt() float64 {
+	b.opt = b.curr
+}
+
+type BasicTolerFloat struct {
+	*BasicOptFloat
+	absTol     float64
+	absTolConv Convergence
+	relTol     float64
+	relTolConv Convergence
+	absCurr    float64
+	absInit    float64
+}
+
+func NewBasicTolerFloat(name string, disp bool, init float64, absTol float64,
+	absTolConv Convergence, relTol float64, relTolConv Convergence) *BasicTolerFloat {
+	return &BasicTolerFloat{
+		BasicOptFloat: &BasicOptFloat{name: name, disp: disp, init: init},
+		absTol:        absTol,
+		absTolCov:     absTolConv,
+		relTol:        relTol,
+		relTolConv:    relTolConv,
 	}
 }
 
-type AbsTolStruct struct {
-	tol float64
-	CurrGetSetterFloat
-	Convergence
+func (b *BasicTolerFloat) SetInit(val float64) {
+	b.init = val
+	b.absInit = math.Abs(val)
 }
 
-func (b *AbsTolStruct) Tol() float64 {
-	return b.tol
+func (b *BasicTolerFloat) SetCurr(val float64) {
+	b.curr = val
+	b.absCurr = math.Abs(val)
 }
 
-func (b *AbsTolStruct) SetTol(val float64) {
-	b.tol = val
+func (b *BasicTolerFloat) SetAbsTol(val float64) {
+	b.absTol = val
 }
 
-func (b *AbsTolStruct) Converged() Convergence {
-	if b.Curr() < b.tol {
-		return b.Convergence
+func (b *BasicTolerFloat) AbsTol() float64 {
+	return b.absTol
+}
+func (b *BasicTolerFloat) SetRelTol(val float64) {
+	b.relTol = val
+}
+
+func (b *BasicTolerFloat) RelTol() float64 {
+	return b.relTol
+}
+
+func (b *BasicTolerFloat) Converged() Convergence {
+	if b.absCurr < b.absTol {
+		return b.absTolConv
+	}
+	if b.absCurr/b.absInit < b.absTol {
+		return b.relTolConv
 	}
 	return nil
 }
@@ -230,34 +240,6 @@ func NewAbsTol(tol float64, c Convergence) *AbsTolStruct {
 	}
 }
 
-type RelTolStruct struct {
-	tol float64
-	CurrInitGetSetterFloat
-	Convergence
-}
-
-func NewRelTol(tol float64, c Convergence) *RelTolStruct {
-	return &RelTolStruct{
-		tol:         tol,
-		Convergence: c,
-	}
-}
-
-func (b *RelTolStruct) Tol() float64 {
-	return b.tol
-}
-
-func (b *RelTolStruct) SetTol(val float64) {
-	b.tol = val
-}
-
-func (b *RelTolStruct) Converged() Convergence {
-	if b.Curr()/b.Init() < b.tol {
-		return b.Convergence
-	}
-	return nil
-}
-
 var LocAbsTol Convergence = LocConvergence{"Location absolute tolerance reached"}
 var LocRelTol Convergence = LocConvergence{"Location relative tolerance reached"}
 var ObjAbsTol Convergence = FunConvergence{"Function absolute tolerance reached"}
@@ -265,137 +247,19 @@ var ObjRelTol Convergence = FunConvergence{"Function relative tolerance reached"
 var GradAbsTol Convergence = GradConvergence{"Gradient absolute tolerance reached"}
 var GradRelTol Convergence = GradConvergence{"Gradient relative tolerance reached"}
 
-// Returns the default values for an input location
-// Locations don't have any tolerances
-type LocationFloatStruct struct {
-	CurrInitGetSetterFloat
-	HistorySaverFloat
-	Displayer
-}
-
-/*
-func (c *LocationFloatStruct) Initialize() error {
-	c.SetCurr(c.Init())
-	return nil
-}
-*/
-
-func (b *LocationFloatStruct) Converged() Convergence {
-	return nil
-}
-
-func (c *LocationFloatStruct) Initialize() error {
-	c.SetCurr(c.Init())
-	return nil
-}
-
-func (l *LocationFloatStruct) AppendHeadings(vals []string) []string {
-	return append(vals, "Loc")
-}
-
-func (l *LocationFloatStruct) AppendValues(vals []interface{}) []interface{} {
-	return append(vals, l.Curr())
-}
-
-// Gets AppendValues from CurrFloat
-
-func DefaultLocationFloat() *LocationFloatStruct {
-	return &LocationFloatStruct{
-		Displayer:         NewDisplay(false),
-		HistorySaverFloat: DefaultHistorySaverFloat(),
-	}
-}
-
-func NewAbsRelTolStruct(init float64, abstol float64, absConv Convergence, reltol float64, relConv Convergence) (CurrInitGetSetterFloat, AbsTol, RelTol) {
-	absTol := NewAbsTol(abstol, absConv)
-	relTol := NewRelTol(reltol, relConv)
-	currInit := NewCurrInitFloat(init)
-	absTol.CurrGetSetterFloat = currInit
-	relTol.CurrInitGetSetterFloat = currInit
-	return currInit, absTol, relTol
-}
-
-type ObjectiveFloatStruct struct {
-	CurrInitGetSetterFloat
-	abstol AbsTol
-	reltol RelTol
-	HistorySaverFloat
-	Displayer
-}
-
-func (c *ObjectiveFloatStruct) Initialize() error {
-	c.SetCurr(c.Init())
-	return nil
-}
-
-func DefaultObjectiveFloat() *ObjectiveFloatStruct {
-	o := &ObjectiveFloatStruct{}
-	o.CurrInitGetSetterFloat, o.abstol, o.reltol = NewAbsRelTolStruct(math.NaN(), 0, ObjAbsTol, 0, ObjRelTol)
-	o.HistorySaverFloat = DefaultHistorySaverFloat()
-	return o
-}
-
-func (b *ObjectiveFloatStruct) AbsTol() AbsTol {
-	return b.abstol
-}
-
-func (b *ObjectiveFloatStruct) RelTol() RelTol {
-	return b.reltol
-}
-
-func (l *ObjectiveFloatStruct) AppendHeadings(vals []string) []string {
-	return append(vals, "Obj")
-}
-
-func (l *ObjectiveFloatStruct) AppendValues(vals []interface{}) []interface{} {
-	return append(vals, l.Curr())
-}
-
-func (o *ObjectiveFloatStruct) Converged() Convergence {
-	return Converged(o.AbsTol(), o.RelTol())
-}
-
-type GradientFloatStruct struct {
-	CurrInitGetSetterFloat
-	abstol AbsTol
-	reltol RelTol
-	HistorySaverFloat
-	Displayer
-}
-
-func (g *GradientFloatStruct) Converged() Convergence {
-	return Converged(g.abstol, g.reltol)
-}
-
 const DefaultGradAbsTol = 1E-6
 const DefaultGradRelTol = 1E-8
 
-func DefaultGradientFloat() *GradientFloatStruct {
-	o := &GradientFloatStruct{}
-	o.CurrInitGetSetterFloat, o.abstol, o.reltol = NewAbsRelTolStruct(math.NaN(), DefaultGradAbsTol, GradAbsTol, DefaultGradRelTol, GradRelTol)
-	o.HistorySaverFloat = DefaultHistorySaverFloat()
-	return o
+func DefaultLocationFloat() *BasicOptFloat {
+	return NewBasicOptFloat("Loc", false, 0)
 }
 
-func (c *GradientFloatStruct) Initialize() error {
-	c.SetCurr(c.Init())
-	return nil
+func DefaultObjectiveFloat() *BasicTolerFloat {
+	return NewBasicTolerFloat("Obj", true, math.NaN(), 0, ObjAbsTol, 0, ObjRelTol)
 }
 
-func (b *GradientFloatStruct) AbsTol() AbsTol {
-	return b.abstol
-}
-
-func (b *GradientFloatStruct) RelTol() RelTol {
-	return b.reltol
-}
-
-func (l *GradientFloatStruct) AppendHeadings(vals []string) []string {
-	return append(vals, "Grad")
-}
-
-func (l *GradientFloatStruct) AppendValues(vals []interface{}) []interface{} {
-	return append(vals, math.Abs(l.Curr()))
+func DefaultGradientFloat() *BasicTolerFloat {
+	return NewBasicTolerFloat("Grad", true, math.NaN(), DefaultGradAbsTol, GradAbsTol, DefaultGradRelTol, GradRelTol)
 }
 
 // TODO: Implement display bounds

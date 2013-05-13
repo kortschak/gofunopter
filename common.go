@@ -64,10 +64,10 @@ func (c *Common) Result() {
 }
 
 type RuntimeStruct struct {
-	Max   time.Duration
-	init  time.Time
-	Total time.Duration
-	Name  string
+	Max  time.Duration
+	init time.Time
+	opt  time.Duration
+	Name string
 	Displayer
 }
 
@@ -103,8 +103,12 @@ func (r *RuntimeStruct) Converged() Convergence {
 	return nil
 }
 
-func (r *RuntimeStruct) Result() {
-	r.Total = time.Since(r.init)
+func (r *RuntimeStruct) SetResult() {
+	r.opt = time.Since(r.init)
+}
+
+func (r *RuntimeStruct) Opt() time.Duration {
+	return r.opt
 }
 
 var MaxIter Convergence = BasicConvergence{"Maximum iterations reached"}
