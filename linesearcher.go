@@ -1,13 +1,17 @@
 package gofunopter
 
-import "math"
+import (
+	"fmt"
+	"github.com/btracey/smatrix"
+	"math"
+)
 
 // TODO: Add in error checking for positive initial gradient? Maybe should be a panic
 // because it shouldn't ever occur
 // TODO: Make AddToHist thread safe so multiple linesearches could be called simulaneously
 
 type WolfeConditioner interface {
-	IsConverged(initObj, initGrad, currObj, currGrad, step float64) bool
+	Converged() Convergence
 	SetFunConst(funConst float64)
 	SetGradConst(gradConst float64)
 	SetInit(initObj, initGrad float64)
@@ -109,7 +113,7 @@ func (s *StrongWolfeConditions) Converged() Convergence {
 
 type Linesearcher interface {
 	MisoGradBasedOptimizer
-	LinesearchMethod() SisoGradBasedOptimizer
+	LinesearchMethod() SisoStepOptimizer
 	WolfeConditions() WolfeConditioner
 }
 
@@ -137,37 +141,29 @@ type LinesearchResult struct {
 
 type LinesearchFun struct {
 	Linesearch Linesearcher
-	//MisoProb   MisoGradBasedProblem
-	Direction []float64
-	Loc       []float64
-	InitLoc   []float64
+	Direction  []float64
+	InitLoc    []float64
+	CurrLoc    []float64
+	CurrGrad   []float64
 }
 
-func (l *LinesearchFun) Eval(step float64) error {
+func (l *LinesearchFun) Eval(step float64) (float64, float64, error) {
+	loc := make([]float64, len(l.InitLoc))
 	for i, val := range l.Direction {
-		l.Loc[i] = val*step + l.InitLoc[i]
+		loc[i] = val*step + l.InitLoc[i]
 	}
-	l.Linesearch.Location().AddToHist(l.Loc)
-	err := l.Linesearch.Function().Eval(l.Loc)
-	return err
+	l.CurrLoc = loc
+	l.Linesearch.Loc().AddToHist(loc)
+	f, g, err := l.Linesearch.Fun().Eval(loc)
+	l.CurrGrad = g
+	directionalG := smatrix.DotVector(l.Direction, g)
+	l.Linesearch.WolfeConditions().SetCurr(f, directionalG, step)
+	return f, directionalG, err
 }
 
-func (l *LinesearchFun) Obj() float64 {
-	o := l.Linesearch.Function().Obj()
-	l.Linesearch.Objective().AddToHist(o)
-	return o
-}
-
-func (l *LinesearchFun) Grad() float64 {
-	g := l.MisoProb.Function().Grad()
-	l.Linesearch.Grad().AddToHist(g)
-	return smatrix.DotVector(l.Direction, g)
-}
-
-func (l *LinesearchFun) Converged() string {
+func (l *LinesearchFun) Converged() Convergence {
 	// Set the function and gradient values for the line searcher
-	l.Linesearch.WolfeConditions().Set(l.Linesearch.Fun().Obj(), l.Linesearch.Fun().Grad())
-	return l.Linesearch.Wolfe().Converged()
+	return l.Linesearch.WolfeConditions().Converged()
 }
 
 type LineSearchSuccess BasicConvergence
@@ -190,32 +186,47 @@ func DefaultSequentialLinesearch() *SeqLinesearch {
 	}
 }
 */
-func Linesearch(MisoGradBasedOptimizer, direction []float64, initLoc []float64, initObj float64, initGrad []float64) {
+func Linesearch(linesearcher Linesearcher, direction []float64, initLoc []float64, initObj float64, initGrad []float64, initStep float64) (*LinesearchResult, error) {
 	//func (s *SeqLinesearch) Linesearch(linesearcher Linsearchable, direction []float64, initLoc []float64, initObj float64, initGrad []float64) {
-	newX := make([]float64, len(x0.Curr()))
+	//newX := make([]float64, len(x0.Curr()))
 
-	sisoGradBased = linesearcher.LinesearchMethod()
+	sisoGradBased := linesearcher.LinesearchMethod()
 	sisoGradBased.Loc().SetInit(0)
-	sisoGradBased.Opt().SetInit(initObj)
+	sisoGradBased.Obj().SetInit(initObj)
+	sisoGradBased.Step().SetInit(initStep)
 	stepDirection := smatrix.UnitVector(direction)
 	initGradProjection := smatrix.DotVector(stepDirection, initGrad)
 
 	sisoGradBased.Grad().SetInit(initGradProjection)
 	fun := &LinesearchFun{
-		Miso:      linesearcher,
-		Direction: direction,
-		InitLoc:   initLoc,
+		Linesearch: linesearcher,
+		Direction:  direction,
+		InitLoc:    initLoc,
 	}
 	sisoGradBased.SetFun(fun)
+	sisoGradBased.SetDisp(false)
 	convergence, err := Optimize(sisoGradBased)
 
+	r := &LinesearchResult{
+		Loc:       fun.CurrLoc,
+		Obj:       sisoGradBased.Obj().Opt(),
+		Grad:      fun.CurrGrad,
+		Step:      sisoGradBased.Loc().Opt(),
+		NFunEvals: sisoGradBased.FunEvals().Opt(),
+	}
+
 	if err != nil {
-		return OptimizerError, err
+		return r, OptimizeError{Str: "Error in linesearch optimizing", Err: err}
 	}
 	// Need to pass on the strings
 	_, ok := convergence.(WolfeConvergence)
 	if !ok {
-		return &LinesearchFailure{}, nil
+		// Check if the wolfe conditions are met anyway
+		c := fun.Converged()
+		if c != nil {
+			return r, nil
+		}
+		return r, fmt.Errorf("Wolfe conditions not met")
 	}
-	return &LinesearchSuccess{}, nil
+	return r, nil
 }

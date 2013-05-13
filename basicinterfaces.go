@@ -11,6 +11,7 @@ type OptFloat interface {
 	Displayer
 	Initializer
 	SetResulter
+	OpterFloat
 }
 
 type OptTolFloat interface {

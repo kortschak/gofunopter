@@ -14,19 +14,27 @@ import (
 // (enforced on a per-iteration) basis, so may go over this limit
 // depending on the optimizer used
 type Common struct {
-	Iter     *Iterations
-	FunEvals *FunctionEvaluations
-	Runtime  *RuntimeStruct
+	iter     *Iterations
+	funEvals *FunctionEvaluations
+	runtime  *RuntimeStruct
 	*DisplayStruct
 	Displayer
 	disp bool
 }
 
+func (c *Common) Iter() *Iterations {
+	return c.iter
+}
+
+func (c *Common) FunEvals() *FunctionEvaluations {
+	return c.funEvals
+}
+
 func DefaultCommon() *Common {
 	c := &Common{
-		Iter:          DefaultIterations(),
-		FunEvals:      DefaultFunctionEvaluations(),
-		Runtime:       DefaultRuntime(),
+		iter:          DefaultIterations(),
+		funEvals:      DefaultFunctionEvaluations(),
+		runtime:       DefaultRuntime(),
 		DisplayStruct: DefaultDisplayStruct(),
 		disp:          true,
 	}
@@ -48,28 +56,28 @@ func (c *Common) Common() *Common {
 
 // Initialize the common structure at the start of a run.
 func (c *Common) Initialize() {
-	c.Runtime.Initialize()
+	c.runtime.Initialize()
 }
 
 // Check if any of the elements of the common structure have converged
 func (c *Common) Converged() Convergence {
-	return Converged(c.Iter, c.FunEvals, c.Runtime)
+	return Converged(c.iter, c.funEvals, c.runtime)
 }
 
 func (c *Common) Iterate() {
-	Iterate(c.Iter, c.DisplayStruct)
+	Iterate(c.iter, c.DisplayStruct)
 }
 
 func (c *Common) AppendHeadings(strs []string) []string {
-	return AppendHeadings(strs, c.Runtime, c.Iter, c.FunEvals)
+	return AppendHeadings(strs, c.runtime, c.iter, c.funEvals)
 }
 
 func (c *Common) AppendValues(vals []interface{}) []interface{} {
-	return AppendValues(vals, c.Runtime, c.Iter, c.FunEvals)
+	return AppendValues(vals, c.runtime, c.iter, c.funEvals)
 }
 
 func (c *Common) SetResult() {
-	SetResults(c.Iter, c.FunEvals, c.Runtime)
+	SetResults(c.iter, c.funEvals, c.runtime)
 }
 
 type RuntimeStruct struct {

@@ -42,21 +42,21 @@ func (b StepConvergence) ConvergenceType() string {
 	return b.Str
 }
 
-type OptimizerFailure struct {
+type OptimizeError struct {
 	Str string
 	Err error
 }
 
-func (o OptimizerFailure) ConvergenceType() string {
+func (o OptimizeError) ConvergenceType() string {
 	return o.Str + o.Err.Error()
 }
 
-func (o OptimizerFailure) Error() string {
+func (o OptimizeError) Error() string {
 	return o.Str + o.Err.Error()
 }
 
-func InitializationError(err error) OptimizerFailure {
-	return OptimizerFailure{
+func InitializationError(err error) OptimizeError {
+	return OptimizeError{
 		Str: "Optimizer failed to initialize, ",
 		Err: err,
 	}

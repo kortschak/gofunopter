@@ -30,20 +30,34 @@ type Optimizer interface {
 	Iterator
 }
 
+type CommonOpter interface {
+	FunEvals() *FunctionEvaluations
+	Iter() *Iterations
+	SetDisp(bool)
+}
+
 type SisoGradBasedOptimizer interface {
 	Optimizer
-	Location() OptFloat
-	Objective() OptTolFloat
-	Gradient() OptTolFloat
-	Function() SisoGradBasedProblem
+	CommonOpter
+	Loc() OptFloat
+	Obj() OptTolFloat
+	Grad() OptTolFloat
+	Fun() SisoGradBasedProblem
+	SetFun(SisoGradBasedProblem)
+}
+
+type SisoStepOptimizer interface {
+	SisoGradBasedOptimizer
+	Step() BoundedOptFloat
 }
 
 type MisoGradBasedOptimizer interface {
 	Optimizer
-	Location() OptFloatSlice
-	Objective() OptTolFloat
-	Gradient() OptTolFloatSlice
-	Function() MisoGradBasedProblem
+	CommonOpter
+	Loc() OptFloatSlice
+	Obj() OptTolFloat
+	Grad() OptTolFloatSlice
+	Fun() MisoGradBasedProblem
 }
 
 // TODO: Add in some mechanism for "Default" optimization selection
