@@ -16,20 +16,20 @@ package gofunopter
 // not added now, but possibly in the future when we have a better idea of all the optimizers
 
 type SisoProblem interface {
-	Eval(loc float64) (obj float64)
+	Eval(loc float64) (obj float64, err error)
 }
 
 // Gradient based SISO
 type SisoGradBasedProblem interface {
-	Eval(loc float64) (obj float64, grad float64)
+	Eval(loc float64) (obj float64, grad float64, err error)
 }
 
 type MisoProblem interface {
-	Eval(loc []float64) (obj float64)
+	Eval(loc []float64) (obj float64, err error)
 }
 
 type MisoGradBasedProblem interface {
-	Eval(loc []float64) (obj float64, grad []float64)
+	Eval(loc []float64) (obj float64, grad []float64, err error)
 }
 
 /*

@@ -4,16 +4,6 @@ type Convergence interface {
 	ConvergenceType() string
 }
 
-/*
-type MISOGradBasedOptimizer interface {
-	Optimizer
-	Loc() OptFloatSlice
-	Obj() OptFloat
-	Grad() OptFloatSlice
-	Fun() MISOGradBasedProblem
-}
-*/
-
 type OptFloat interface {
 	HistoryFloat
 	CurrerFloat

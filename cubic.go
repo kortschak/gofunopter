@@ -151,9 +151,7 @@ func (cubic *Cubic) Iterate() (err error) {
 		trialX = -cubic.Step.Curr() + cubic.Loc.Init()
 	}
 
-	err = cubic.Fun.Eval(trialX)
-	trialF := cubic.Fun.Obj()
-	trialG := cubic.Fun.Grad()
+	trialF, trialG, err = cubic.Fun.Eval(trialX)
 	// Should this be embedded into Fun so every time eval is called
 	// the count is updated?
 	cubic.FunEvals.Add(1)
