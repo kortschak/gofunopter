@@ -5,6 +5,22 @@ import (
 	"math"
 )
 
+func DefaultCubic() *Cubic {
+	c := &Cubic{
+		loc:             DefaultLocationFloat(),
+		obj:             DefaultObjectiveFloat(),
+		grad:            DefaultGradientFloat(),
+		step:            DefaultBoundedStepFloat(),
+		StepDecreaseMin: 1E-4,
+		StepDecreaseMax: 0.9,
+		StepIncreaseMin: 1.25,
+		StepIncreaseMax: 1E3,
+		Common:          DefaultCommon(),
+	}
+	SetDisplayMethods(c)
+	return c
+}
+
 // Maybe all of these should go in their own subpackages?
 // SISOGradBased, etc. That way have SISO.Optimizable?
 
@@ -13,7 +29,7 @@ type Cubic struct {
 	loc  OptFloat        // Location
 	obj  OptTolFloat     // Function Value
 	grad OptTolFloat     // Gradient value
-	Step BoundedOptFloat // Step size
+	step BoundedOptFloat // Step size
 	*Common
 	fun SisoGradBasedProblem
 
@@ -46,24 +62,8 @@ func (c *Cubic) Fun() SisoGradBasedProblem {
 	return c.fun
 }
 
-func (c *Cubic) SetFunc(fun SisoGradBasedProblem) {
+func (c *Cubic) SetFun(fun SisoGradBasedProblem) {
 	c.fun = fun
-}
-
-func DefaultCubic() *Cubic {
-	c := &Cubic{
-		loc:             DefaultLocationFloat(),
-		obj:             DefaultObjectiveFloat(),
-		grad:            DefaultGradientFloat(),
-		Step:            DefaultBoundedStepFloat(),
-		StepDecreaseMin: 1E-4,
-		StepDecreaseMax: 0.9,
-		StepIncreaseMin: 1.25,
-		StepIncreaseMax: 1E3,
-		Common:          DefaultCommon(),
-	}
-	SetDisplayMethods(c)
-	return c
 }
 
 // Should we add error checking to the evaluations?
@@ -84,10 +84,10 @@ func (c *Cubic) Initialize() (err error) {
 	}
 	c.obj.Initialize()
 	c.grad.Initialize()
-	if c.Step.Init() <= 0 {
+	if c.step.Init() <= 0 {
 		return fmt.Errorf("Initial step must be positive")
 	}
-	c.Step.Initialize()
+	c.step.Initialize()
 	c.initialGradNegative = (c.grad.Curr() < 0)
 	c.currStepDirectionPositive = true
 	c.deltaCurrent = 0.0 // How far is the current point from the initial point
@@ -96,7 +96,7 @@ func (c *Cubic) Initialize() (err error) {
 }
 
 func (c *Cubic) Converged() Convergence {
-	conv := Converged(c.obj, c.grad, c.Step)
+	conv := Converged(c.obj, c.grad, c.step)
 	if conv != nil {
 		return conv
 	}
@@ -111,7 +111,7 @@ func (c *Cubic) Converged() Convergence {
 }
 
 func (c *Cubic) AppendHeadings(headings []string) []string {
-	headings = AppendHeadings(headings, c.Common, c.loc, c.obj, c.grad, c.Step)
+	headings = AppendHeadings(headings, c.Common, c.loc, c.obj, c.grad, c.step)
 	s, ok := c.fun.(Displayer)
 	if ok {
 		headings = AppendHeadings(headings, s)
@@ -121,7 +121,7 @@ func (c *Cubic) AppendHeadings(headings []string) []string {
 
 func (c *Cubic) AppendValues(values []interface{}) []interface{} {
 	values = AppendValues(values, c.Common)
-	values = append(values, c.grad.Curr(), c.Step.Curr)
+	values = append(values, c.grad.Curr(), c.step.Curr)
 	s, ok := c.fun.(Displayer)
 	if ok {
 		values = AppendValues(values, s)
@@ -130,7 +130,7 @@ func (c *Cubic) AppendValues(values []interface{}) []interface{} {
 }
 
 func (c *Cubic) Result() {
-	SetResults(c.Common, c.loc, c.obj, c.grad, c.Step)
+	SetResults(c.Common, c.loc, c.obj, c.grad, c.step)
 }
 
 type CubicResult struct {
@@ -150,12 +150,15 @@ func (cubic *Cubic) Iterate() (err error) {
 	var trialX float64
 
 	if cubic.initialGradNegative {
-		trialX = cubic.Step.Curr() + cubic.loc.Init()
+		trialX = cubic.step.Curr() + cubic.loc.Init()
 	} else {
-		trialX = -cubic.Step.Curr() + cubic.loc.Init()
+		trialX = -cubic.step.Curr() + cubic.loc.Init()
 	}
 
 	trialF, trialG, err := cubic.fun.Eval(trialX)
+	if err != nil {
+		return &FunctionError{Err: err, Loc: trialX}
+	}
 	// Should this be embedded into Fun so every time eval is called
 	// the count is updated?
 	cubic.FunEvals().Add(1)
@@ -164,9 +167,9 @@ func (cubic *Cubic) Iterate() (err error) {
 	cubic.loc.AddToHist(trialG)
 
 	/*
-		fmt.Println("curr step size", cubic.Step.Curr())
-		fmt.Println("LB", cubic.Step.Lb())
-		fmt.Println("UB", cubic.Step.Ub())
+		fmt.Println("curr step size", cubic.step.Curr())
+		fmt.Println("LB", cubic.step.Lb())
+		fmt.Println("UB", cubic.step.Ub())
 		fmt.Println("initX", cubic.loc.Init())
 		fmt.Println("currX", cubic.loc.Curr())
 		fmt.Println("trialX", trialX)
@@ -237,7 +240,7 @@ func (cubic *Cubic) Iterate() (err error) {
 			for i := 0; i < 10; i++ {
 				fmt.Println("Blah")
 			}
-			fmt.Println(cubic.Step.Curr)
+			fmt.Println(cubic.step.Curr)
 			stepMultiplier = 0.5
 		}
 
@@ -310,7 +313,7 @@ func (cubic *Cubic) Iterate() (err error) {
 	}
 
 	var deltaXTrialCurrent float64
-	deltaXTrialCurrent = cubic.Step.Curr() - cubic.deltaCurrent
+	deltaXTrialCurrent = cubic.step.Curr() - cubic.deltaCurrent
 	newDeltaXFromCurrent := deltaXTrialCurrent * stepMultiplier
 
 	var newStepSize float64
@@ -319,8 +322,8 @@ func (cubic *Cubic) Iterate() (err error) {
 	// Want to make sure that the new search location isn't pushing beyond
 	// previously established bounds. If it is, just do a binary search between
 	// the bounds
-	if !cubic.Step.WithinBounds(newStepSize) {
-		newStepSize = cubic.Step.Midpoint()
+	if !cubic.step.WithinBounds(newStepSize) {
+		newStepSize = cubic.step.Midpoint()
 	}
 
 	if updateCurrPoint {
@@ -337,7 +340,7 @@ func (cubic *Cubic) Iterate() (err error) {
 		}
 	}
 	//panic("wa")
-	cubic.Step.SetCurr(newStepSize)
+	cubic.step.SetCurr(newStepSize)
 	return nil
 }
 
@@ -349,16 +352,16 @@ func (c *Cubic) UnclearStepIncrease() float64 {
 	// Clean up this code!
 	var stepMultiplier float64
 	if c.currStepDirectionPositive {
-		if math.IsInf(c.Step.Ub(), 1) {
-			stepMultiplier = (2*c.Step.Curr() - c.deltaCurrent) / (c.Step.Curr() - c.deltaCurrent)
+		if math.IsInf(c.step.Ub(), 1) {
+			stepMultiplier = (2*c.step.Curr() - c.deltaCurrent) / (c.step.Curr() - c.deltaCurrent)
 		} else {
-			stepMultiplier = (c.Step.Midpoint() - c.deltaCurrent) / (c.Step.Curr() - c.deltaCurrent)
+			stepMultiplier = (c.step.Midpoint() - c.deltaCurrent) / (c.step.Curr() - c.deltaCurrent)
 		}
 	} else {
-		if math.IsInf(c.Step.Lb(), -1) {
-			stepMultiplier = (2*c.Step.Curr() - c.loc.Curr()) / (c.Step.Curr() - c.loc.Curr())
+		if math.IsInf(c.step.Lb(), -1) {
+			stepMultiplier = (2*c.step.Curr() - c.loc.Curr()) / (c.step.Curr() - c.loc.Curr())
 		} else {
-			stepMultiplier = (c.Step.Midpoint() - c.loc.Curr()) / (c.Step.Curr() - c.loc.Curr())
+			stepMultiplier = (c.step.Midpoint() - c.loc.Curr()) / (c.step.Curr() - c.loc.Curr())
 		}
 	}
 	return stepMultiplier
@@ -368,15 +371,15 @@ func (c *Cubic) SetBound(dir string) {
 	if dir == "Lower" {
 		// Want to go farther in this direction
 		if c.currStepDirectionPositive == true {
-			c.Step.SetLb(c.Step.Curr())
+			c.step.SetLb(c.step.Curr())
 		} else {
-			c.Step.SetUb(c.Step.Curr())
+			c.step.SetUb(c.step.Curr())
 		}
 	} else if dir == "Upper" {
 		if c.currStepDirectionPositive == true {
-			c.Step.SetUb(c.Step.Curr())
+			c.step.SetUb(c.step.Curr())
 		} else {
-			c.Step.SetLb(c.Step.Curr())
+			c.step.SetLb(c.step.Curr())
 		}
 	}
 	return

@@ -4,7 +4,7 @@ func Optimize(o Optimizer) (c Convergence, err error) {
 	// Add in some check about nil pointers and such
 	err = o.Initialize()
 	if err != nil {
-		return InitializationError(err), InitializationError(err)
+		return nil, &InitializationError{Err: err}
 	}
 	// Want to return the result even if there is an error in case anything
 	// gets lost (maybe a defer would be even better?)
@@ -20,7 +20,7 @@ func Optimize(o Optimizer) (c Convergence, err error) {
 			break
 		}
 	}
-	return InitializationError(err), InitializationError(err)
+	return nil, err
 }
 
 type Optimizer interface {

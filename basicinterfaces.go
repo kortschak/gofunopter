@@ -38,7 +38,7 @@ type OptFloatSlice interface {
 	Displayer
 	Initializer
 	SetResulter
-	OpterFloat
+	OpterFloatSlice
 }
 
 type OptTolFloatSlice interface {

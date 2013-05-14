@@ -1,7 +1,6 @@
 package gofunopter
 
 import (
-	"fmt"
 	"github.com/btracey/smatrix"
 	"math"
 )
@@ -113,7 +112,7 @@ func (s *StrongWolfeConditions) Converged() Convergence {
 
 type Linesearcher interface {
 	MisoGradBasedOptimizer
-	LinesearchMethod() SisoStepOptimizer
+	LinesearchMethod() SisoGradBasedOptimizer
 	WolfeConditions() WolfeConditioner
 }
 
@@ -140,16 +139,17 @@ type LinesearchResult struct {
 // Could also define a linesearch interface, and then have sequential, parallel, etc.
 
 type LinesearchFun struct {
-	Linesearch Linesearcher
-	Direction  []float64
-	InitLoc    []float64
-	CurrLoc    []float64
-	CurrGrad   []float64
+	Linesearch          Linesearcher
+	Direction           []float64
+	InitialSearchVector []float64
+	InitLoc             []float64
+	CurrLoc             []float64
+	CurrGrad            []float64
 }
 
 func (l *LinesearchFun) Eval(step float64) (float64, float64, error) {
 	loc := make([]float64, len(l.InitLoc))
-	for i, val := range l.Direction {
+	for i, val := range l.InitialSearchVector {
 		loc[i] = val*step + l.InitLoc[i]
 	}
 	l.CurrLoc = loc
@@ -186,22 +186,22 @@ func DefaultSequentialLinesearch() *SeqLinesearch {
 	}
 }
 */
-func Linesearch(linesearcher Linesearcher, direction []float64, initLoc []float64, initObj float64, initGrad []float64, initStep float64) (*LinesearchResult, error) {
+func Linesearch(linesearcher Linesearcher, initialSearchVector []float64, initLoc []float64, initObj float64, initGrad []float64) (*LinesearchResult, error) {
 	//func (s *SeqLinesearch) Linesearch(linesearcher Linsearchable, direction []float64, initLoc []float64, initObj float64, initGrad []float64) {
 	//newX := make([]float64, len(x0.Curr()))
 
 	sisoGradBased := linesearcher.LinesearchMethod()
 	sisoGradBased.Loc().SetInit(0)
 	sisoGradBased.Obj().SetInit(initObj)
-	sisoGradBased.Step().SetInit(initStep)
-	stepDirection := smatrix.UnitVector(direction)
-	initGradProjection := smatrix.DotVector(stepDirection, initGrad)
+	direction := smatrix.UnitVector(initialSearchVector)
+	initGradProjection := smatrix.DotVector(direction, initGrad)
 
 	sisoGradBased.Grad().SetInit(initGradProjection)
 	fun := &LinesearchFun{
-		Linesearch: linesearcher,
-		Direction:  direction,
-		InitLoc:    initLoc,
+		Linesearch:          linesearcher,
+		Direction:           direction,
+		InitialSearchVector: initialSearchVector,
+		InitLoc:             initLoc,
 	}
 	sisoGradBased.SetFun(fun)
 	sisoGradBased.SetDisp(false)
@@ -216,7 +216,7 @@ func Linesearch(linesearcher Linesearcher, direction []float64, initLoc []float6
 	}
 
 	if err != nil {
-		return r, OptimizeError{Str: "Error in linesearch optimizing", Err: err}
+		return r, &LinesearchError{Err: err}
 	}
 	// Need to pass on the strings
 	_, ok := convergence.(WolfeConvergence)
@@ -224,9 +224,10 @@ func Linesearch(linesearcher Linesearcher, direction []float64, initLoc []float6
 		// Check if the wolfe conditions are met anyway
 		c := fun.Converged()
 		if c != nil {
+			// Conditions met, no problem
 			return r, nil
 		}
-		return r, fmt.Errorf("Wolfe conditions not met")
+		return r, &LinesearchConvergenceFalure{Conv: convergence, Loc: initLoc, InitStep: initialSearchVector}
 	}
 	return r, nil
 }

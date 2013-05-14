@@ -40,26 +40,6 @@ func (b StepConvergence) ConvergenceType() string {
 	return b.Str
 }
 
-type OptimizeError struct {
-	Str string
-	Err error
-}
-
-func (o OptimizeError) ConvergenceType() string {
-	return o.Str + o.Err.Error()
-}
-
-func (o OptimizeError) Error() string {
-	return o.Str + o.Err.Error()
-}
-
-func InitializationError(err error) OptimizeError {
-	return OptimizeError{
-		Str: "Optimizer failed to initialize, ",
-		Err: err,
-	}
-}
-
 // Counts up and converges if there is a maximum
 type Counter struct {
 	max   int // Maximum allowable value of the counter
