@@ -55,8 +55,8 @@ func (c *Common) Common() *Common {
 }
 
 // Initialize the common structure at the start of a run.
-func (c *Common) Initialize() {
-	c.runtime.Initialize()
+func (c *Common) Initialize() error {
+	return Initialize(c.runtime, c.funEvals, c.iter)
 }
 
 // Check if any of the elements of the common structure have converged
@@ -115,8 +115,9 @@ func (r *RuntimeStruct) Start() time.Time {
 	return r.init
 }
 
-func (r *RuntimeStruct) Initialize() {
+func (r *RuntimeStruct) Initialize() error {
 	r.init = time.Now()
+	return nil
 }
 
 var MaxRuntime Convergence = BasicConvergence{"Maximum runtime reached"}
@@ -147,6 +148,11 @@ func (i *Iterations) Iterate() error {
 	return nil
 }
 
+func (i *Iterations) Initialize() error {
+	i.Counter.curr = 0
+	return nil
+}
+
 func DefaultIterations() *Iterations {
 	return &Iterations{
 		Counter: NewCounter("Iter", math.MaxInt32-1, MaxIter, true),
@@ -163,4 +169,9 @@ func DefaultFunctionEvaluations() *FunctionEvaluations {
 
 type FunctionEvaluations struct {
 	*Counter
+}
+
+func (f *FunctionEvaluations) Initialize() error {
+	f.Counter.curr = 0
+	return nil
 }

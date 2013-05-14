@@ -11,6 +11,8 @@ import (
 
 type WolfeConditioner interface {
 	Converged() Convergence
+	FunConst() float64
+	GradConst() float64
 	SetFunConst(funConst float64)
 	SetGradConst(gradConst float64)
 	SetInit(initObj, initGrad float64)
@@ -66,6 +68,14 @@ func (w *WeakWolfeConditions) SetGradConst(val float64) {
 	w.gradConst = val
 }
 
+func (w *WeakWolfeConditions) FunConst() float64 {
+	return w.funConst
+}
+
+func (w *WeakWolfeConditions) GradConst() float64 {
+	return w.gradConst
+}
+
 type StrongWolfeConditions struct {
 	funConst  float64
 	gradConst float64
@@ -94,6 +104,14 @@ func (s *StrongWolfeConditions) SetFunConst(val float64) {
 
 func (s *StrongWolfeConditions) SetGradConst(val float64) {
 	s.gradConst = val
+}
+
+func (s *StrongWolfeConditions) FunConst() float64 {
+	return s.funConst
+}
+
+func (s *StrongWolfeConditions) GradConst() float64 {
+	return s.gradConst
 }
 
 func (s *StrongWolfeConditions) Converged() Convergence {
@@ -138,18 +156,19 @@ type LinesearchResult struct {
 // in the line search in parallel?
 // Could also define a linesearch interface, and then have sequential, parallel, etc.
 
+// TODO: Change to make it okay to use any SISO method, not just gradient based
 type LinesearchFun struct {
-	Linesearch          Linesearcher
-	Direction           []float64
-	InitialSearchVector []float64
-	InitLoc             []float64
-	CurrLoc             []float64
-	CurrGrad            []float64
+	Linesearch       Linesearcher
+	Direction        []float64
+	InitSearchVector []float64
+	InitLoc          []float64
+	CurrLoc          []float64
+	CurrGrad         []float64
 }
 
 func (l *LinesearchFun) Eval(step float64) (float64, float64, error) {
 	loc := make([]float64, len(l.InitLoc))
-	for i, val := range l.InitialSearchVector {
+	for i, val := range l.InitSearchVector {
 		loc[i] = val*step + l.InitLoc[i]
 	}
 	l.CurrLoc = loc
@@ -186,22 +205,28 @@ func DefaultSequentialLinesearch() *SeqLinesearch {
 	}
 }
 */
-func Linesearch(linesearcher Linesearcher, initialSearchVector []float64, initLoc []float64, initObj float64, initGrad []float64) (*LinesearchResult, error) {
+func Linesearch(linesearcher Linesearcher, initSearchVector []float64, initLoc []float64, initObj float64, initGrad []float64) (*LinesearchResult, error) {
 	//func (s *SeqLinesearch) Linesearch(linesearcher Linsearchable, direction []float64, initLoc []float64, initObj float64, initGrad []float64) {
 	//newX := make([]float64, len(x0.Curr()))
+	//fmt.Println(initGradProjection)
 
+	// Need to add a Reset method to the linesearcher so the bulk can be reused (right now step size is being saved)
 	sisoGradBased := linesearcher.LinesearchMethod()
 	sisoGradBased.Loc().SetInit(0)
 	sisoGradBased.Obj().SetInit(initObj)
-	direction := smatrix.UnitVector(initialSearchVector)
+	direction := smatrix.UnitVector(initSearchVector)
 	initGradProjection := smatrix.DotVector(direction, initGrad)
+
+	// Set wolfe constants
+	linesearcher.WolfeConditions().SetInit(initObj, initGradProjection)
+	linesearcher.WolfeConditions().SetCurr(initObj, initGradProjection, 1.0)
 
 	sisoGradBased.Grad().SetInit(initGradProjection)
 	fun := &LinesearchFun{
-		Linesearch:          linesearcher,
-		Direction:           direction,
-		InitialSearchVector: initialSearchVector,
-		InitLoc:             initLoc,
+		Linesearch:       linesearcher,
+		Direction:        direction,
+		InitSearchVector: initSearchVector,
+		InitLoc:          initLoc,
 	}
 	sisoGradBased.SetFun(fun)
 	sisoGradBased.SetDisp(false)
@@ -227,7 +252,7 @@ func Linesearch(linesearcher Linesearcher, initialSearchVector []float64, initLo
 			// Conditions met, no problem
 			return r, nil
 		}
-		return r, &LinesearchConvergenceFalure{Conv: convergence, Loc: initLoc, InitStep: initialSearchVector}
+		return r, &LinesearchConvergenceFalure{Conv: convergence, Loc: initLoc, InitStep: initSearchVector}
 	}
 	return r, nil
 }

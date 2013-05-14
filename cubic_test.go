@@ -24,26 +24,17 @@ type SisoGBTest struct {
 	Fun func(float64) (float64, float64)
 }
 
-func (t *SisoGBTest) Eval(val float64) error {
-	t.f, t.g = t.Fun(val)
-	return nil
-}
-
-func (t *SisoGBTest) Obj() float64 {
-	return t.f
-}
-
-func (t *SisoGBTest) Grad() float64 {
-	return t.g
+func (t *SisoGBTest) Eval(val float64) (float64, float64, error) {
+	f, g := t.Fun(val)
+	return f, g, nil
 }
 
 func TestCubic(t *testing.T) {
 	c := DefaultCubic()
 	c.TimeInterval = 0 * time.Second
 	c.HeadingInterval = 0
-	fmt.Println("In test", c.Obj.Init)
 	problem := &SisoGBTest{Fun: Fun1}
-	c.Fun = problem
+	c.SetFun(problem)
 	conv, err := Optimize(c)
 	if err != nil {
 		t.Errorf(err.Error())

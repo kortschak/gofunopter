@@ -19,7 +19,7 @@ func DefaultGradientFloat() *BasicTolFloat {
 }
 
 func DefaultBoundedStepFloat() *BasicBoundsFloat {
-	return NewBasicBoundsFloat("Step", false, 1, DefaultBoundedStepFloatAbsTol, StepBoundsAbsTol, DefaultBoundedStepFloatRelTol, StepBoundsRelTol, math.Inf(-1), math.Inf(1))
+	return NewBasicBoundsFloat("Step", false, 1.0, DefaultBoundedStepFloatAbsTol, StepBoundsAbsTol, DefaultBoundedStepFloatRelTol, StepBoundsRelTol, math.Inf(-1), math.Inf(1))
 }
 
 // All the normal methods minus the tols
@@ -55,6 +55,11 @@ func (b *BasicOptFloat) Save() bool {
 
 func (b *BasicOptFloat) SetSave(val bool) {
 	b.save = val
+}
+
+func (b *BasicOptFloat) Hist() []float64 {
+	// Should this return a copy of the hist? Probably not for large problems
+	return b.hist
 }
 
 func (b *BasicOptFloat) AddToHist(val float64) {
@@ -158,6 +163,7 @@ func (b *BasicTolFloat) Initialize() error {
 }
 
 func (b *BasicTolFloat) Converged() Convergence {
+
 	if b.absCurr < b.absTol {
 		return b.absTolConv
 	}
@@ -186,7 +192,7 @@ func NewBasicBoundsFloat(name string, disp bool, init float64, absTol float64,
 }
 
 func (s *BasicBoundsFloat) Initialize() error {
-	s.curr = s.init
+	s.BasicTolFloat.Initialize()
 	s.initGap = s.ub - s.lb
 	s.gap = s.ub - s.lb
 	if s.initGap < 0 {

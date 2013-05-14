@@ -6,7 +6,7 @@ import (
 	"math"
 )
 
-func DefaultLBFGS() *Lbfgs {
+func DefaultLbfgs() *Lbfgs {
 	l := &Lbfgs{
 		loc:    DefaultLocationFloatSlice(),
 		obj:    DefaultObjectiveFloat(),
@@ -18,8 +18,17 @@ func DefaultLBFGS() *Lbfgs {
 		linesearchMethod: DefaultCubic(),
 		nStore:           30,
 	}
-	l.wolfe.SetFunConst(1.0)
-	l.wolfe.SetGradConst(0.9)
+	l.wolfe.SetFunConst(0.0)
+	l.wolfe.SetGradConst(0.5)
+
+	// Turn off tolerances so the line search has to meet the wolfe conditions to move on
+	l.step.SetAbsTol(0)
+	l.step.SetRelTol(0)
+	l.linesearchMethod.Grad().SetAbsTol(0)
+	l.linesearchMethod.Grad().SetRelTol(0)
+
+	// Set a max fun evals in case something gets stuck
+	l.linesearchMethod.FunEvals().SetMax(100)
 	return l
 }
 
@@ -88,9 +97,8 @@ func (lbfgs *Lbfgs) SetLinesearch(linesearchMethod SisoGradBasedOptimizer) {
 }
 
 func (lbfgs *Lbfgs) Initialize() error {
-
-	if lbfgs.loc.Curr() == nil {
-		fmt.Errorf("Initial location must be provided. (Set using lbfgs.Loc().Init(val) )")
+	if lbfgs.loc.Init() == nil {
+		return fmt.Errorf("Initial location must be provided. (Set using lbfgs.Loc().Init(val) )")
 	}
 
 	lbfgs.Common.Initialize()
@@ -107,6 +115,8 @@ func (lbfgs *Lbfgs) Initialize() error {
 		lbfgs.obj.SetInit(f)
 		lbfgs.grad.SetInit(g)
 	}
+	lbfgs.obj.Initialize()
+	lbfgs.grad.Initialize()
 	lbfgs.step.Initialize()
 
 	lbfgs.q = make([]float64, nDim)
@@ -123,7 +133,7 @@ func (lbfgs *Lbfgs) Initialize() error {
 	return nil
 }
 
-func (lbfgs *Lbfgs) Convergenced() Convergence {
+func (lbfgs *Lbfgs) Converged() Convergence {
 	conv := Converged(lbfgs.obj, lbfgs.grad, lbfgs.step)
 	if conv != nil {
 		return conv

@@ -87,6 +87,8 @@ func (c *Cubic) Initialize() (err error) {
 	if c.step.Init() <= 0 {
 		return fmt.Errorf("Initial step must be positive")
 	}
+	c.step.SetLb(0.0)
+	c.step.SetUb(math.Inf(1))
 	c.step.Initialize()
 	c.initialGradNegative = (c.grad.Curr() < 0)
 	c.currStepDirectionPositive = true
@@ -129,7 +131,7 @@ func (c *Cubic) AppendValues(values []interface{}) []interface{} {
 	return values
 }
 
-func (c *Cubic) Result() {
+func (c *Cubic) SetResult() {
 	SetResults(c.Common, c.loc, c.obj, c.grad, c.step)
 }
 
