@@ -101,12 +101,12 @@ func (b *BasicOptFloatSlice) Opt() []float64 {
 
 type BasicTolFloatSlice struct {
 	*BasicOptFloatSlice
-	absTol      float64
-	absTolConv  Convergence
-	relTol      float64
-	relTolConv  Convergence
-	avgNormCurr float64 // Two norm divided by the number of elements
-	avgNormInit float64 // Two norm divided by the number of elements
+	absTol     float64
+	absTolConv Convergence
+	relTol     float64
+	relTolConv Convergence
+	normCurr   float64 // Two norm 
+	normInit   float64 // Two norm
 }
 
 func NewBasicTolFloatSlice(name string, disp bool, init []float64, absTol float64,
@@ -123,17 +123,17 @@ func NewBasicTolFloatSlice(name string, disp bool, init []float64, absTol float6
 // Gets append headings from basic float slice
 
 func (b *BasicTolFloatSlice) AppendValues(vals []interface{}) []interface{} {
-	return append(vals, b.avgNormCurr)
+	return append(vals, b.normCurr)
 }
 
 func (b *BasicTolFloatSlice) SetInit(val []float64) {
 	b.init = val
-	b.avgNormInit = smatrix.VectorTwoNorm(val) / (float64(len(val)))
+	b.normInit = smatrix.VectorTwoNorm(val)
 }
 
 func (b *BasicTolFloatSlice) SetCurr(val []float64) {
 	b.curr = val
-	b.avgNormCurr = smatrix.VectorTwoNorm(val) / (float64(len(val)))
+	b.normCurr = smatrix.VectorTwoNorm(val)
 }
 
 func (b *BasicTolFloatSlice) SetAbsTol(val float64) {
@@ -156,16 +156,16 @@ func (b *BasicTolFloatSlice) Initialize() error {
 	if err != nil {
 		return err
 	}
-	b.avgNormInit = smatrix.VectorTwoNorm(b.init) / (float64(len(b.init)))
-	b.avgNormCurr = b.avgNormInit
+	b.normInit = smatrix.VectorTwoNorm(b.init)
+	b.normCurr = b.normInit
 	return nil
 }
 
 func (b *BasicTolFloatSlice) Converged() Convergence {
-	if b.avgNormCurr < b.absTol {
+	if b.normCurr < b.absTol {
 		return b.absTolConv
 	}
-	if b.avgNormCurr/b.avgNormInit < b.relTol {
+	if b.normCurr/b.normInit < b.relTol {
 		return b.relTolConv
 	}
 	return nil
