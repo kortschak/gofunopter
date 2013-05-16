@@ -55,4 +55,6 @@ func TestLbfgs(t *testing.T) {
 	}
 	fmt.Println("Num fun evals", c.FunEvals().Opt())
 	fmt.Println(conv)
+
+	// Add in some check about gradient convergence
 }

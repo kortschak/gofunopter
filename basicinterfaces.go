@@ -67,12 +67,14 @@ type HistoryFloat interface {
 	AddToHist(float64)
 	Save() bool
 	SetSave(bool)
+	Hist() []float64
 }
 
 type HistoryFloatSlice interface {
 	AddToHist([]float64)
 	Save() bool
 	SetSave(bool)
+	Hist() [][]float64
 }
 
 type Iterator interface {

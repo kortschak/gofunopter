@@ -31,6 +31,10 @@ func NewBasicOptFloatSlice(name string, disp bool, init []float64) *BasicOptFloa
 	}
 }
 
+func (b *BasicOptFloatSlice) Hist() [][]float64 {
+	return b.hist
+}
+
 func (b *BasicOptFloatSlice) Disp() bool {
 	return b.disp
 }
