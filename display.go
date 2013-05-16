@@ -81,6 +81,8 @@ func (d *DisplayStruct) GetDisplayStruct() *DisplayStruct {
 
 // Iterate the display. Checks to see if the columns or values should be displayed
 func (d *DisplayStruct) Iterate() error {
+	fmt.Println("In display iterate")
+
 	if !d.DisplayOn {
 		return nil // Display is off, don't do anything
 	}

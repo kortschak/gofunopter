@@ -97,6 +97,8 @@ func (lbfgs *Lbfgs) SetLinesearch(linesearchMethod SisoGradBasedOptimizer) {
 }
 
 func (lbfgs *Lbfgs) Initialize() error {
+	lbfgs.Common.Iterate()
+	// TODO: Should there be an iterate for loc et al?
 
 	if lbfgs.loc.Init() == nil {
 		return fmt.Errorf("Initial location must be provided. (Set using lbfgs.Loc().Init(val) )")
