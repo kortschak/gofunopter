@@ -159,8 +159,7 @@ func (c *Lbfgs) AppendHeadings(headings []string) []string {
 }
 
 func (c *Lbfgs) AppendValues(values []interface{}) []interface{} {
-	values = AppendValues(values, c.Common)
-	values = append(values, c.grad.Curr(), c.step.Curr)
+	values = AppendValues(values, c.Common, c.loc, c.obj, c.grad, c.step)
 	s, ok := c.fun.(Displayer)
 	if ok {
 		values = AppendValues(values, s)

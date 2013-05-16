@@ -119,7 +119,7 @@ var StepBoundsAbsTol Convergence = StepConvergence{"Step bounds absolute toleran
 var StepBoundsRelTol Convergence = StepConvergence{"Step bounds absolute tolerance reached"}
 
 const DefaultGradAbsTol = 1E-6
-const DefaultGradRelTol = 1E-8
+const DefaultGradRelTol = 0 // Default is off
 
 const DefaultInitStepSize = 1
 const DefaultBoundedStepFloatAbsTol = 0 //

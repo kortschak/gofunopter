@@ -1,7 +1,6 @@
 package gofunopter
 
 import (
-	"fmt"
 	"github.com/btracey/smatrix"
 )
 
@@ -11,7 +10,7 @@ func DefaultLocationFloatSlice() *BasicOptFloatSlice {
 
 // TODO: Turning display off makes it think it's converged. This is BAD
 func DefaultGradientFloatSlice() *BasicTolFloatSlice {
-	return NewBasicTolFloatSlice("Grad", false, nil, DefaultGradAbsTol, GradAbsTol, DefaultGradRelTol, GradRelTol)
+	return NewBasicTolFloatSlice("Grad", true, nil, DefaultGradAbsTol, GradAbsTol, DefaultGradRelTol, GradRelTol)
 }
 
 // All the normal methods minus the tols
@@ -121,6 +120,12 @@ func NewBasicTolFloatSlice(name string, disp bool, init []float64, absTol float6
 	}
 }
 
+// Gets append headings from basic float slice
+
+func (b *BasicTolFloatSlice) AppendValues(vals []interface{}) []interface{} {
+	return append(vals, b.avgNormCurr)
+}
+
 func (b *BasicTolFloatSlice) SetInit(val []float64) {
 	b.init = val
 	b.avgNormInit = smatrix.VectorTwoNorm(val) / (float64(len(val)))
@@ -157,15 +162,11 @@ func (b *BasicTolFloatSlice) Initialize() error {
 }
 
 func (b *BasicTolFloatSlice) Converged() Convergence {
-	fmt.Println("In tol float slice converged")
 	if b.avgNormCurr < b.absTol {
-		fmt.Println("abs tol converged")
 		return b.absTolConv
 	}
 	if b.avgNormCurr/b.avgNormInit < b.relTol {
-		fmt.Println("rel tol converged")
 		return b.relTolConv
 	}
-	fmt.Println("None converged")
 	return nil
 }

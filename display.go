@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+// TODO: Change appending values and headings to be one function
+
 func AppendValues(values []interface{}, displayables ...Displayer) []interface{} {
 	for _, displayable := range displayables {
 		if displayable.Disp() {
