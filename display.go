@@ -100,7 +100,6 @@ func (d *DisplayStruct) Iterate() error {
 		fmt.Println("Values", d.values)
 		return fmt.Errorf("Number of headings and values must match")
 	}
-
 	// First, check if the headings need to be set
 	if d.nValueDisplays >= d.HeadingInterval {
 		d.Headings()

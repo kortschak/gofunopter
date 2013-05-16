@@ -41,7 +41,7 @@ func TestLbfgs(t *testing.T) {
 	c := DefaultLbfgs()
 	//fmt.Println("Init loc", c.Loc().Init())
 	c.TimeInterval = 0 * time.Second
-	c.HeadingInterval = 0
+	c.HeadingInterval = 5
 	problem := &MisoGBTest{Fun: Rosenbrock}
 	c.SetFun(problem)
 	initX := make([]float64, nDim)
