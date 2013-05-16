@@ -1,6 +1,7 @@
 package gofunopter
 
 import (
+	"fmt"
 	"github.com/btracey/smatrix"
 )
 
@@ -8,8 +9,9 @@ func DefaultLocationFloatSlice() *BasicOptFloatSlice {
 	return NewBasicOptFloatSlice("Loc", false, nil)
 }
 
+// TODO: Turning display off makes it think it's converged. This is BAD
 func DefaultGradientFloatSlice() *BasicTolFloatSlice {
-	return NewBasicTolFloatSlice("Grad", true, nil, DefaultGradAbsTol, GradAbsTol, DefaultGradRelTol, GradRelTol)
+	return NewBasicTolFloatSlice("Grad", false, nil, DefaultGradAbsTol, GradAbsTol, DefaultGradRelTol, GradRelTol)
 }
 
 // All the normal methods minus the tols
@@ -155,11 +157,15 @@ func (b *BasicTolFloatSlice) Initialize() error {
 }
 
 func (b *BasicTolFloatSlice) Converged() Convergence {
+	fmt.Println("In tol float slice converged")
 	if b.avgNormCurr < b.absTol {
+		fmt.Println("abs tol converged")
 		return b.absTolConv
 	}
 	if b.avgNormCurr/b.avgNormInit < b.relTol {
+		fmt.Println("rel tol converged")
 		return b.relTolConv
 	}
+	fmt.Println("None converged")
 	return nil
 }

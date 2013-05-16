@@ -17,7 +17,9 @@ func AppendValues(values []interface{}, displayables ...Displayer) []interface{}
 
 func AppendHeadings(headings []string, displayables ...Displayer) []string {
 	for _, displayable := range displayables {
-		headings = displayable.AppendHeadings(headings)
+		if displayable.Disp() {
+			headings = displayable.AppendHeadings(headings)
+		}
 	}
 	return headings
 }
@@ -81,8 +83,8 @@ func (d *DisplayStruct) GetDisplayStruct() *DisplayStruct {
 
 // Iterate the display. Checks to see if the columns or values should be displayed
 func (d *DisplayStruct) Iterate() error {
-	fmt.Println("In display iterate")
-
+	// TODO: Should this even be here?
+	// TODO: Heading and value number error should give the headings and values
 	if !d.DisplayOn {
 		return nil // Display is off, don't do anything
 	}
@@ -91,6 +93,9 @@ func (d *DisplayStruct) Iterate() error {
 	d.headings = d.AppendHeadings(headings)
 	d.values = d.AppendValues(values)
 	if len(d.headings) != len(d.values) {
+		fmt.Println("Here")
+		fmt.Println("Headings", d.headings)
+		fmt.Println("Values", d.values)
 		return fmt.Errorf("Number of headings and values must match")
 	}
 

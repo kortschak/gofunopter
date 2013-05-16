@@ -29,6 +29,7 @@ func DefaultLbfgs() *Lbfgs {
 
 	// Set a max fun evals in case something gets stuck
 	l.linesearchMethod.FunEvals().SetMax(100)
+	SetDisplayMethods(l)
 	return l
 }
 
@@ -97,9 +98,6 @@ func (lbfgs *Lbfgs) SetLinesearch(linesearchMethod SisoGradBasedOptimizer) {
 }
 
 func (lbfgs *Lbfgs) Initialize() error {
-	lbfgs.Common.Iterate()
-	// TODO: Should there be an iterate for loc et al?
-
 	if lbfgs.loc.Init() == nil {
 		return fmt.Errorf("Initial location must be provided. (Set using lbfgs.Loc().Init(val) )")
 	}
@@ -171,6 +169,13 @@ func (c *Lbfgs) AppendValues(values []interface{}) []interface{} {
 }
 
 func (lbfgs *Lbfgs) Iterate() error {
+	// TODO: Should there be an iterate for loc et al?
+	err := lbfgs.Common.Iterate()
+	if err != nil {
+		fmt.Println("error")
+		return err
+	}
+
 	counter := lbfgs.counter
 	q := lbfgs.q
 	a := lbfgs.a
@@ -214,9 +219,7 @@ func (lbfgs *Lbfgs) Iterate() error {
 	// Perform line search -- need to find some way to implement this, especially bookkeeping function values
 
 	//x_kp1, f_kp1, g_kp1, alpha_k, nFunEval, err := lbfgs.line.Linesearch(lbfgs.fun, lbfgs.x, lbfgs.f, lbfgs.g, p_k)
-
 	linesearchResult, err := Linesearch(lbfgs, p_k, lbfgs.loc.Curr(), lbfgs.obj.Curr(), lbfgs.grad.Curr())
-
 	// In the future add a check to switch to a different linesearcher?
 	if err != nil {
 		return err

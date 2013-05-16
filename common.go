@@ -64,8 +64,9 @@ func (c *Common) Converged() Convergence {
 	return Converged(c.iter, c.funEvals, c.runtime)
 }
 
-func (c *Common) Iterate() {
-	Iterate(c.iter, c.DisplayStruct)
+func (c *Common) Iterate() error {
+	err := Iterate(c.iter, c.DisplayStruct)
+	return err
 }
 
 func (c *Common) AppendHeadings(strs []string) []string {
