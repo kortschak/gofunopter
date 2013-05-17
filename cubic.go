@@ -66,6 +66,11 @@ func (c *Cubic) SetFun(fun SisoGradBasedProblem) {
 	c.fun = fun
 }
 
+func (c *Cubic) Optimize(fun SisoGradBasedProblem) {
+	c.fun = fun
+	Optimize(c)
+}
+
 // Should we add error checking to the evaluations?
 func (c *Cubic) Initialize() (err error) {
 	// Initialize takes all of these in so function evaluations can be saved if 
