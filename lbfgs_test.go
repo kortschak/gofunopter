@@ -49,6 +49,7 @@ func TestLbfgs(t *testing.T) {
 		initX[i] = rand.Float64() * scale
 	}
 	c.Loc().SetInit(initX)
+	//fmt.Println("init loc", c.Loc().Init())
 	conv, err := Optimize(c)
 	if err != nil {
 		t.Errorf(err.Error())
