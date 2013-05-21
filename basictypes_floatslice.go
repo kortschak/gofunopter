@@ -65,6 +65,9 @@ func (b *BasicOptFloatSlice) Curr() []float64 {
 
 func (b *BasicOptFloatSlice) SetCurr(val []float64) {
 	//b.curr = val
+	if b.curr == nil {
+		b.curr = make([]float64, len(val))
+	}
 	copy(b.curr, val)
 }
 
@@ -73,7 +76,9 @@ func (b *BasicOptFloatSlice) Init() []float64 {
 }
 
 func (b *BasicOptFloatSlice) SetInit(val []float64) {
-
+	if b.init == nil {
+		b.init = make([]float64, len(val))
+	}
 	copy(b.init, val)
 }
 
@@ -129,12 +134,13 @@ func (b *BasicTolFloatSlice) AppendValues(vals []interface{}) []interface{} {
 }
 
 func (b *BasicTolFloatSlice) SetInit(val []float64) {
-	b.init = val
+
+	b.BasicOptFloatSlice.SetInit(val)
 	b.normInit = smatrix.VectorTwoNorm(val)
 }
 
 func (b *BasicTolFloatSlice) SetCurr(val []float64) {
-	b.curr = val
+	b.BasicOptFloatSlice.SetCurr(val)
 	b.normCurr = smatrix.VectorTwoNorm(val)
 }
 
