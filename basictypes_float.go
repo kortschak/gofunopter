@@ -63,7 +63,9 @@ func (b *BasicOptFloat) Hist() []float64 {
 }
 
 func (b *BasicOptFloat) AddToHist(val float64) {
-	b.hist = append(b.hist, val)
+	if b.save {
+		b.hist = append(b.hist, val)
+	}
 }
 
 func (b *BasicOptFloat) Curr() float64 {

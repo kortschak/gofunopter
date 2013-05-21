@@ -53,10 +53,12 @@ func (b *BasicOptFloatSlice) SetSave(val bool) {
 }
 
 func (b *BasicOptFloatSlice) AddToHist(val []float64) {
-	// Make a copy so the pointer can change later
-	newSlice := make([]float64, len(val))
-	copy(newSlice, val)
-	b.hist = append(b.hist, newSlice)
+	if b.save {
+		// Make a copy so the pointer can change later
+		newSlice := make([]float64, len(val))
+		copy(newSlice, val)
+		b.hist = append(b.hist, newSlice)
+	}
 }
 
 func (b *BasicOptFloatSlice) Curr() []float64 {
