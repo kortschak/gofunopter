@@ -111,6 +111,14 @@ func (lbfgs *Lbfgs) Initialize() error {
 	lbfgs.loc.Initialize()
 	nDim := len(lbfgs.loc.Init())
 
+	s, ok := lbfgs.fun.(Initializer)
+	if ok {
+		err := s.Initialize()
+		if err != nil {
+			return fmt.Errorf("Error initializing user-defined function")
+		}
+	}
+
 	// If the initial value isn't set, evaluate the function to get the initial value and gradient
 	if math.IsNaN(lbfgs.obj.Init()) {
 		f, g, err := lbfgs.fun.Eval(lbfgs.loc.Init())
