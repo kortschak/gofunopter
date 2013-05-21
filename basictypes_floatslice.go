@@ -64,7 +64,8 @@ func (b *BasicOptFloatSlice) Curr() []float64 {
 }
 
 func (b *BasicOptFloatSlice) SetCurr(val []float64) {
-	b.curr = val
+	//b.curr = val
+	copy(b.curr, val)
 }
 
 func (b *BasicOptFloatSlice) Init() []float64 {
@@ -72,7 +73,8 @@ func (b *BasicOptFloatSlice) Init() []float64 {
 }
 
 func (b *BasicOptFloatSlice) SetInit(val []float64) {
-	b.init = val
+
+	copy(b.init, val)
 }
 
 func (b *BasicOptFloatSlice) Initialize() error {
@@ -105,7 +107,7 @@ type BasicTolFloatSlice struct {
 	absTolConv Convergence
 	relTol     float64
 	relTolConv Convergence
-	normCurr   float64 // Two norm 
+	normCurr   float64 // Two norm
 	normInit   float64 // Two norm
 }
 
