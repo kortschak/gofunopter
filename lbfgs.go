@@ -86,6 +86,10 @@ func (c *Lbfgs) Fun() MisoGradBasedProblem {
 	return c.fun
 }
 
+func (c *Lbfgs) Step() BoundedOptFloat {
+	return c.step
+}
+
 func (c *Lbfgs) SetFun(misoGradBasedProblem MisoGradBasedProblem) {
 	c.fun = misoGradBasedProblem
 }
