@@ -115,9 +115,9 @@ func (lbfgs *Lbfgs) SetLinesearch(linesearchMethod SisoGradBasedOptimizer) {
 }
 
 func (lbfgs *Lbfgs) Initialize() error {
-	s, ok := lbfgs.fun.(InitGuesserFloatSlice)
+	iger, ok := lbfgs.fun.(InitGuesserFloatSlice)
 	if ok {
-		lbfgs.loc.SetInit(s.InitGuess())
+		lbfgs.loc.SetInit(iger.InitGuess())
 	}
 	if lbfgs.loc.Init() == nil {
 		return fmt.Errorf("Initial location must be provided. (Set using lbfgs.Loc().SetInit(val) ), or the function must be an InitGuesserFloatSlice")
