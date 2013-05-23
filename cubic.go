@@ -77,6 +77,9 @@ func (c *Cubic) Initialize() (err error) {
 	// the information is already there
 	c.Common.Initialize()
 	c.loc.Initialize()
+
+	// Need to check for initial value, etc.
+
 	if math.IsNaN(c.obj.Init()) || math.IsNaN(c.grad.Curr()) {
 		// Initial function value hasn't been set, so do it.
 		f, g, err := c.fun.Eval(c.loc.Init())
