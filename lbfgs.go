@@ -33,6 +33,14 @@ func DefaultLbfgs() *Lbfgs {
 	return l
 }
 
+// IDEA: Have an Eval() and then a Fun() Grad() etc. This way, the optimizeoptimizer
+// routine can do all the things for the function taking the burden off of the
+// optimization routine. Also could add the Commoner part
+// Other optimizers that can just use constraint evaluations (or whatever) could have
+// special interfaces for their problems if need be.
+// This way, the optimizer just needs to take care of its own part
+// Also, add in an InitGuesser check (this also makes it really easy to do random restarts)
+
 type Lbfgs struct {
 	loc  OptFloatSlice
 	obj  OptTolFloat
@@ -108,7 +116,13 @@ func (lbfgs *Lbfgs) SetLinesearch(linesearchMethod SisoGradBasedOptimizer) {
 
 func (lbfgs *Lbfgs) Initialize() error {
 	if lbfgs.loc.Init() == nil {
-		return fmt.Errorf("Initial location must be provided. (Set using lbfgs.Loc().SetInit(val) )")
+		s, ok := lbfgs.fun.(InitGuesserFloatSlice)
+		if ok {
+			lbfgs.loc.SetInit(s.InitGuess())
+		} else {
+			return fmt.Errorf("Initial location must be provided. (Set using lbfgs.Loc().SetInit(val) ), or the function must be an InitGuesserFloatSlice")
+		}
+		// TODO: Add a check if it's an initializer
 	}
 
 	lbfgs.Common.Initialize()
@@ -143,10 +157,12 @@ func (lbfgs *Lbfgs) Initialize() error {
 	lbfgs.sHist = make([][]float64, lbfgs.nStore)
 	lbfgs.yHist = make([][]float64, lbfgs.nStore)
 	lbfgs.rhoHist = make([]float64, lbfgs.nStore)
+
 	for i := range lbfgs.sHist {
 		lbfgs.sHist[i] = make([]float64, nDim)
 		lbfgs.yHist[i] = make([]float64, nDim)
 	}
+
 	lbfgs.gamma_k = 1.0
 	return nil
 }

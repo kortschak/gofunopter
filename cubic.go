@@ -73,7 +73,7 @@ func (c *Cubic) Optimize(fun SisoGradBasedProblem) {
 
 // Should we add error checking to the evaluations?
 func (c *Cubic) Initialize() (err error) {
-	// Initialize takes all of these in so function evaluations can be saved if 
+	// Initialize takes all of these in so function evaluations can be saved if
 	// the information is already there
 	c.Common.Initialize()
 	c.loc.Initialize()
@@ -187,6 +187,7 @@ func (cubic *Cubic) Iterate() (err error) {
 		fmt.Println("currG", currG)
 		fmt.Println("trialG", trialG)
 	*/
+
 	//cubic.AddToHist(trialX, trialF,trialG)
 	absTrialG := math.Abs(trialG)
 
@@ -203,7 +204,7 @@ func (cubic *Cubic) Iterate() (err error) {
 	*/
 
 	// Find coefficients of the cubic polynomial fit between the current point and the new point
-	// Derived from fitting a cubic between (0, CurrF) and (1,TrialF). 
+	// Derived from fitting a cubic between (0, CurrF) and (1,TrialF).
 	// Apply transformations later to reshift the coordinate axis
 
 	// Need to play games with derivatives

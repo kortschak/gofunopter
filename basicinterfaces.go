@@ -1,5 +1,13 @@
 package gofunopter
 
+type InitGuesserFloat interface {
+	InitGuess() float64
+}
+
+type InitGuesserFloatSlice interface {
+	InitGuess() []float64
+}
+
 type Convergence interface {
 	ConvergenceType() string
 }
