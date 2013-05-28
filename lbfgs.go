@@ -65,9 +65,9 @@ type Lbfgs struct {
 	rhoHist []float64
 }
 
-func (lbfgs *Lbfgs) Optimize(fun MisoGradBasedProblem) {
+func (lbfgs *Lbfgs) Optimize(fun MisoGradBasedProblem) (Convergence, error) {
 	lbfgs.fun = fun
-	Optimize(lbfgs)
+	return Optimize(lbfgs)
 }
 
 func (lbfgs *Lbfgs) WolfeConditions() WolfeConditioner {
