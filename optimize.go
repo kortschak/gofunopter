@@ -52,7 +52,7 @@ type SisoStepOptimizer interface {
 }
 
 type MisoGradBasedOptimizer interface {
-	Optimize(MisoGradBasedProblem)
+	Optimize(MisoGradBasedProblem) (Convergence, error)
 	Optimizer
 	CommonOpter
 	Loc() OptFloatSlice
