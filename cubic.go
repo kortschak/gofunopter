@@ -175,7 +175,6 @@ func (cubic *Cubic) Iterate() (err error) {
 	cubic.loc.AddToHist(trialX)
 	cubic.loc.AddToHist(trialF)
 	cubic.loc.AddToHist(trialG)
-
 	/*
 		fmt.Println("curr step size", cubic.step.Curr())
 		fmt.Println("LB", cubic.step.Lb())
@@ -199,13 +198,11 @@ func (cubic *Cubic) Iterate() (err error) {
 	decreaseInValue := (deltaF < 0)
 	changeInDerivSign := (currG > 0 && trialG < 0) || (currG < 0 && trialG > 0)
 	decreaseInDerivMagnitude := (absTrialG < math.Abs(currG))
-
 	/*
-	   fmt.Println("Decrease in value ", decreaseInValue)
-	   fmt.Println("Change in deriv sign ", changeInDerivSign)
-	   fmt.Println("Decrease in deriv mag ", decreaseInDerivMagnitude)
+		fmt.Println("Decrease in value ", decreaseInValue)
+		fmt.Println("Change in deriv sign ", changeInDerivSign)
+		fmt.Println("Decrease in deriv mag ", decreaseInDerivMagnitude)
 	*/
-
 	// Find coefficients of the cubic polynomial fit between the current point and the new point
 	// Derived from fitting a cubic between (0, CurrF) and (1,TrialF).
 	// Apply transformations later to reshift the coordinate axis
@@ -228,6 +225,9 @@ func (cubic *Cubic) Iterate() (err error) {
 
 	c = currG
 	det := (math.Pow(b, 2) - 3*a*c)
+
+	//fmt.Println("det", det)
+
 	if a == 0 {
 		//Perfect quadratic fit
 		stepMultiplier = -c / (2 * b)

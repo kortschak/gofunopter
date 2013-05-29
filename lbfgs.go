@@ -114,10 +114,20 @@ func (lbfgs *Lbfgs) SetLinesearch(linesearchMethod SisoGradBasedOptimizer) {
 	lbfgs.linesearchMethod = linesearchMethod
 }
 
-func (lbfgs *Lbfgs) Initialize() error {
-	iger, ok := lbfgs.fun.(InitGuesserFloatSlice)
+func (lbfgs *Lbfgs) SetResult() {
+	SetResults(lbfgs.Common, lbfgs.Loc(), lbfgs.Obj(), lbfgs.Grad(), lbfgs.Step())
+	s, ok := lbfgs.Fun().(SetResulter)
 	if ok {
-		lbfgs.loc.SetInit(iger.InitGuess())
+		SetResults(s)
+	}
+}
+
+func (lbfgs *Lbfgs) Initialize() error {
+	if lbfgs.loc.Init() == nil {
+		iger, ok := lbfgs.fun.(InitGuesserFloatSlice)
+		if ok {
+			lbfgs.loc.SetInit(iger.InitGuess())
+		}
 	}
 	if lbfgs.loc.Init() == nil {
 		return fmt.Errorf("Initial location must be provided. (Set using lbfgs.Loc().SetInit(val) ), or the function must be an InitGuesserFloatSlice")
@@ -249,7 +259,10 @@ func (lbfgs *Lbfgs) Iterate() error {
 	// Perform line search -- need to find some way to implement this, especially bookkeeping function values
 
 	//x_kp1, f_kp1, g_kp1, alpha_k, nFunEval, err := lbfgs.line.Linesearch(lbfgs.fun, lbfgs.x, lbfgs.f, lbfgs.g, p_k)
+	fmt.Println("Starting linesearch")
 	linesearchResult, err := Linesearch(lbfgs, p_k, lbfgs.loc.Curr(), lbfgs.obj.Curr(), lbfgs.grad.Curr())
+	fmt.Println("Done linesearch")
+
 	// In the future add a check to switch to a different linesearcher?
 	if err != nil {
 		return err
