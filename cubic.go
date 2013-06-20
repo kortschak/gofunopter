@@ -106,7 +106,7 @@ func (c *Cubic) Initialize() (err error) {
 }
 
 func (c *Cubic) Converged() Convergence {
-	conv := Converged(c.obj, c.grad, c.step)
+	conv := Converged(c.Common, c.obj, c.grad, c.step)
 	if conv != nil {
 		return conv
 	}

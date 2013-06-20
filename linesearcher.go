@@ -214,6 +214,9 @@ func Linesearch(linesearcher Linesearcher, initSearchVector []float64, initLoc [
 	sisoGradBased := linesearcher.LinesearchMethod()
 	sisoGradBased.Loc().SetInit(0)
 	sisoGradBased.Obj().SetInit(initObj)
+
+	//sisoGradBased.FunEvals().SetMax(100)
+
 	direction := smatrix.UnitVector(initSearchVector)
 	initGradProjection := smatrix.DotVector(direction, initGrad)
 

@@ -176,7 +176,7 @@ func (lbfgs *Lbfgs) Initialize() error {
 }
 
 func (lbfgs *Lbfgs) Converged() Convergence {
-	conv := Converged(lbfgs.obj, lbfgs.grad, lbfgs.step)
+	conv := Converged(lbfgs.Common, lbfgs.obj, lbfgs.grad, lbfgs.step)
 	if conv != nil {
 		return conv
 	}
@@ -259,9 +259,9 @@ func (lbfgs *Lbfgs) Iterate() error {
 	// Perform line search -- need to find some way to implement this, especially bookkeeping function values
 
 	//x_kp1, f_kp1, g_kp1, alpha_k, nFunEval, err := lbfgs.line.Linesearch(lbfgs.fun, lbfgs.x, lbfgs.f, lbfgs.g, p_k)
-	fmt.Println("Starting linesearch")
+	//fmt.Println("Starting linesearch")
 	linesearchResult, err := Linesearch(lbfgs, p_k, lbfgs.loc.Curr(), lbfgs.obj.Curr(), lbfgs.grad.Curr())
-	fmt.Println("Done linesearch")
+	//fmt.Println("Done linesearch")
 
 	// In the future add a check to switch to a different linesearcher?
 	if err != nil {

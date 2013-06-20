@@ -1,5 +1,9 @@
 package gofunopter
 
+// TODO: Separate these out into their own package so
+// a third party can use them without having to import
+// the whole library
+
 type InitGuesserFloat interface {
 	InitGuess() float64
 }

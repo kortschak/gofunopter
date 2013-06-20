@@ -80,6 +80,7 @@ func (c *Counter) SetMax(val int) {
 func (c *Counter) Add(delta int) {
 	c.curr += delta
 }
+
 func (c *Counter) Converged() Convergence {
 	if c.curr > c.max {
 		return c.conv
