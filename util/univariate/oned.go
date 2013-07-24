@@ -1,15 +1,19 @@
-package gofunopter
+package util
 
 import (
 	"fmt"
-	//"github.com/btracey/smatrix"
 	"math"
 )
 
+// DefaultLocationFloat is the default to be used for a one-D location.
+// Defaults for the display off and to have an initial value of 0.
+// This initial value starts the initial guess at 0 if no initial guess has been set
 func DefaultLocationFloat() *BasicOptFloat {
 	return NewBasicOptFloat("Loc", false, 0)
 }
 
+// DefaultObjectiveFloat is the default to be used for a one-D objective.
+// Default is that the display is on and
 func DefaultObjectiveFloat() *BasicTolFloat {
 	return NewBasicTolFloat("Obj", true, math.NaN(), 0, ObjAbsTol, 0, ObjRelTol)
 }
@@ -22,8 +26,10 @@ func DefaultBoundedStepFloat() *BasicBoundsFloat {
 	return NewBasicBoundsFloat("Step", false, 1.0, DefaultBoundedStepFloatAbsTol, StepBoundsAbsTol, DefaultBoundedStepFloatRelTol, StepBoundsRelTol, math.Inf(-1), math.Inf(1))
 }
 
+// OptFloat is a float type with the bells and whistles. It can be displayed,
+// can store a history, can be set to an initial value
 // All the normal methods minus the tols
-type BasicOptFloat struct {
+type OptFloat struct {
 	save bool
 	curr float64
 	init float64
