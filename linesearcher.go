@@ -1,6 +1,7 @@
 package gofunopter
 
 import (
+	//"fmt"
 	"github.com/btracey/smatrix"
 	"math"
 )
@@ -168,6 +169,7 @@ type LinesearchFun struct {
 
 func (l *LinesearchFun) Eval(step float64) (float64, float64, error) {
 	loc := make([]float64, len(l.InitLoc))
+
 	for i, val := range l.InitSearchVector {
 		loc[i] = val*step + l.InitLoc[i]
 	}
@@ -217,8 +219,17 @@ func Linesearch(linesearcher Linesearcher, initSearchVector []float64, initLoc [
 
 	//sisoGradBased.FunEvals().SetMax(100)
 
-	direction := smatrix.UnitVector(initSearchVector)
+	// This is wrong, shouldn't be renormalizing I believe.
+	//direction := smatrix.UnitVector(initSearchVector)
+	//initGradProjection := smatrix.DotVector(direction, initGrad)
+	direction := initSearchVector
 	initGradProjection := smatrix.DotVector(direction, initGrad)
+
+	//fmt.Println("Init Grad", initGrad)
+	//fmt.Println("Init Grad norm", smatrix.VectorTwoNorm(initGrad))
+	//fmt.Println("Direction", direction)
+	//fmt.Println("Direction norm", smatrix.VectorTwoNorm(direction))
+	//fmt.Println("InitGradProjection", initGradProjection)
 
 	// Set wolfe constants
 	linesearcher.WolfeConditions().SetInit(initObj, initGradProjection)
@@ -231,6 +242,10 @@ func Linesearch(linesearcher Linesearcher, initSearchVector []float64, initLoc [
 		InitSearchVector: initSearchVector,
 		InitLoc:          initLoc,
 	}
+
+	// Maybe it isn't resetting any of the other counters and such.
+	// Upon calling result it should all reset itself so can use again
+
 	sisoGradBased.SetFun(fun)
 	sisoGradBased.SetDisp(false)
 	convergence, err := Optimize(sisoGradBased)
@@ -257,5 +272,7 @@ func Linesearch(linesearcher Linesearcher, initSearchVector []float64, initLoc [
 		}
 		return r, &LinesearchConvergenceFalure{Conv: convergence, Loc: initLoc, InitStep: initSearchVector}
 	}
+	//fmt.Println("Finished linesearch")
+	//fmt.Println()
 	return r, nil
 }

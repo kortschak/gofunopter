@@ -175,16 +175,17 @@ func (cubic *Cubic) Iterate() (err error) {
 	cubic.loc.AddToHist(trialX)
 	cubic.loc.AddToHist(trialF)
 	cubic.loc.AddToHist(trialG)
+
 	/*
 		fmt.Println("curr step size", cubic.step.Curr())
 		fmt.Println("LB", cubic.step.Lb())
 		fmt.Println("UB", cubic.step.Ub())
 		fmt.Println("initX", cubic.loc.Init())
 		fmt.Println("currX", cubic.loc.Curr())
-		fmt.Println("trialX", trialX)
-		fmt.Println("InitF", cubic.obj.Init())
-		fmt.Println("currF", currF)
-		fmt.Println("trialF", trialF)
+		fmt.Println("trialX ", trialX)
+		fmt.Println("InitF \t", cubic.obj.Init())
+		fmt.Println("currF \t", currF)
+		fmt.Println("trialF \t", trialF)
 		fmt.Println("InitG", cubic.grad.Init())
 		fmt.Println("currG", currG)
 		fmt.Println("trialG", trialG)
@@ -198,6 +199,7 @@ func (cubic *Cubic) Iterate() (err error) {
 	decreaseInValue := (deltaF < 0)
 	changeInDerivSign := (currG > 0 && trialG < 0) || (currG < 0 && trialG > 0)
 	decreaseInDerivMagnitude := (absTrialG < math.Abs(currG))
+
 	/*
 		fmt.Println("Decrease in value ", decreaseInValue)
 		fmt.Println("Change in deriv sign ", changeInDerivSign)
