@@ -16,30 +16,6 @@ func (b BasicConvergence) ConvergenceType() string {
 	return b.Str
 }
 
-type GradConvergence struct{ Str string }
-
-func (b GradConvergence) ConvergenceType() string {
-	return b.Str
-}
-
-type LocConvergence struct{ Str string }
-
-func (b LocConvergence) ConvergenceType() string {
-	return b.Str
-}
-
-type FunConvergence struct{ Str string }
-
-func (b FunConvergence) ConvergenceType() string {
-	return b.Str
-}
-
-type StepConvergence struct{ Str string }
-
-func (b StepConvergence) ConvergenceType() string {
-	return b.Str
-}
-
 // Counts up and converges if there is a maximum
 type Counter struct {
 	max   int // Maximum allowable value of the counter
@@ -108,20 +84,5 @@ func (c *Counter) AppendValues(vals []interface{}) []interface{} {
 	return append(vals, c.curr)
 }
 
-var LocAbsTol Convergence = LocConvergence{"Location absolute tolerance reached"}
-var LocRelTol Convergence = LocConvergence{"Location relative tolerance reached"}
-var ObjAbsTol Convergence = FunConvergence{"Function absolute tolerance reached"}
-var ObjRelTol Convergence = FunConvergence{"Function relative tolerance reached"}
-var GradAbsTol Convergence = GradConvergence{"Gradient absolute tolerance reached"}
-var GradRelTol Convergence = GradConvergence{"Gradient relative tolerance reached"}
-var StepAbsTol Convergence = StepConvergence{"Step absolute tolerance reached"}
-var StepRelTol Convergence = StepConvergence{"Step relative tolerance reached"}
 var StepBoundsAbsTol Convergence = StepConvergence{"Step bounds absolute tolerance reached"}
 var StepBoundsRelTol Convergence = StepConvergence{"Step bounds absolute tolerance reached"}
-
-const DefaultGradAbsTol = 1E-6
-const DefaultGradRelTol = 0 // Default is off
-
-const DefaultInitStepSize = 1
-const DefaultBoundedStepFloatAbsTol = 0 //
-const DefaultBoundedStepFloatRelTol = 0 // Turn off step rel tol

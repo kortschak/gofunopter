@@ -6,6 +6,11 @@ import (
 	"time"
 )
 
+type Struct struct {
+	Value   interface{}
+	Heading string
+}
+
 // TODO: Change appending values and headings to be one function
 
 func AppendValues(values []interface{}, displayables ...Displayer) []interface{} {
