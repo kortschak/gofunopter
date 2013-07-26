@@ -1,4 +1,4 @@
-package gofunopter
+package display
 
 import (
 //"fmt"

@@ -1,9 +1,9 @@
-package gofunopter
+package display
 
 import (
-	"fmt"
-	"math"
-	"time"
+//"fmt"
+//"math"
+//"time"
 )
 
 type Struct struct {
@@ -11,6 +11,7 @@ type Struct struct {
 	Heading string
 }
 
+/*
 // TODO: Change appending values and headings to be one function
 
 func AppendValues(values []interface{}, displayables ...Displayer) []interface{} {
@@ -143,3 +144,4 @@ func (d *DisplayStruct) Values() {
 	}
 	fmt.Print("\n")
 }
+*/

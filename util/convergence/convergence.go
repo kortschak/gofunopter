@@ -1,5 +1,10 @@
 package convergence
 
+// A converger is a type that can test if the optimization has converged
+type Converger interface {
+	Converged() C
+}
+
 // C is a basic interface for expressing methods of optimizer convergence
 type C interface {
 	Convergence() string
@@ -14,8 +19,8 @@ func (g Grad) Convergence() string {
 }
 
 // GradAbsTol is a convergence because of meaning the absolute tolerance of the gradient
-var GradAbsTol Convergence = GradConvergence{"Gradient absolute tolerance reached"}
-var GradRelTol Convergence = GradConvergence{"Gradient relative tolerance reached"}
+var GradAbsTol Grad = Grad{"Gradient absolute tolerance reached"}
+var GradRelTol Grad = Grad{"Gradient relative tolerance reached"}
 
 type Obj struct{ Str string }
 
@@ -23,14 +28,14 @@ func (o Obj) Convergence() string {
 	return o.Str
 }
 
-var ObjAbsTol Convergence = FunConvergence{"Function absolute tolerance reached"}
-var ObjRelTol Convergence = FunConvergence{"Function relative tolerance reached"}
+var ObjAbsTol Obj = Obj{"Function absolute tolerance reached"}
+var ObjRelTol Obj = Obj{"Function relative tolerance reached"}
 
-type StepConvergence struct{ Str string }
+type Step struct{ Str string }
 
-func (s StepConvergence) Convergence() string {
+func (s Step) Convergence() string {
 	return s.Str
 }
 
-var StepAbsTol Convergence = StepConvergence{"Step absolute tolerance reached"}
-var StepRelTol Convergence = StepConvergence{"Step relative tolerance reached"}
+var StepAbsTol Step = Step{"Step absolute tolerance reached"}
+var StepRelTol Step = Step{"Step relative tolerance reached"}
