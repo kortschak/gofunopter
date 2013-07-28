@@ -41,8 +41,8 @@ func NewLocation() *Location {
 
 // Reset resets the values of the struct so that the optimizer can
 // be run again (with a different initial condition for example)
-func (l *Location) Reset() {
-	l.Float.Reset(0)
+func (l *Location) SetResult() {
+	l.Float.SetResult(0)
 }
 
 // Objective is an objective type for the optimizer
@@ -67,8 +67,8 @@ func NewObjective() *Objective {
 	return o
 }
 
-func (o *Objective) Reset() {
-	o.TolFloat.Reset(math.NaN())
+func (o *Objective) SetResult() {
+	o.TolFloat.SetResult(math.NaN())
 }
 
 type Gradient struct {
@@ -92,13 +92,16 @@ func NewGradient() *Gradient {
 	return g
 }
 
-func (g *Gradient) Reset() {
-	g.TolFloat.Reset(math.NaN())
+func (g *Gradient) SetResult() {
+	g.TolFloat.SetResult(math.NaN())
 }
 
 // Gradient should display the norm and not the actual value
-func (g *Gradient) Display(d []*display.Struct) []*display.Struct {
-	return append(d, &display.Struct{Value: math.Abs(g.Curr()), Heading: "GradNorm"})
+func (g *Gradient) AddToDisplay(d []*display.Struct) []*display.Struct {
+	if g.disp {
+		d = append(d, &display.Struct{Value: math.Abs(g.Curr()), Heading: "GradNorm"})
+	}
+	return d
 }
 
 type Step struct {
@@ -120,13 +123,16 @@ func NewStep() *Step {
 	return s
 }
 
-func (s *Step) Reset() {
-	s.TolFloat.Reset(1)
+// Gradient should display the norm and not the actual value
+func (s *Step) AddToDisplay(d []*display.Struct) []*display.Struct {
+	if s.disp {
+		d = append(d, &display.Struct{Value: math.Abs(s.Curr()), Heading: "GradNorm"})
+	}
+	return d
 }
 
-// Gradient should display the norm and not the actual value
-func (s *Step) Display(d []*display.Struct) []*display.Struct {
-	return append(d, &display.Struct{Value: math.Abs(s.Curr()), Heading: "GradNorm"})
+func (s *Step) SetResult() {
+	s.TolFloat.SetResult(1)
 }
 
 type BoundedStep struct {
@@ -134,19 +140,19 @@ type BoundedStep struct {
 }
 
 // Ub and Lb are assumed to be called by the optimizer, not the caller
-func NewBoundedStep() {
+func NewBoundedStep(lb, ub float64) {
 	b := &BoundedStep{
 		BoundedFloat: NewBoundedFloat("Step", convergence.StepAbsTol, convergence.StepRelTol),
 	}
 	b.SetInit(1)
-	b.SetUb(math.Inf(1))
-	b.SetLb(math.Inf(-1))
+	b.SetLb(lb)
+	b.SetUb(ub)
 	// Disp defaults to false
 	// Default both Abs and RelTol to zero
 }
 
-func (b BoundedStep) Reset() {
-	b.BoundedFloat.Reset(1)
+func (b BoundedStep) SetResult(lb, ub float64) {
+	b.BoundedFloat.SetResult(1, lb, ub)
 }
 
 // OptFloat is a float type with the bells and whistles.
@@ -202,8 +208,11 @@ func (b *Float) SetDisp(val bool) {
 
 // Display returns the display struct to be displayed if
 // Float.Disp() is true.
-func (b *Float) Display(d []*display.Struct) []*display.Struct {
-	return append(d, &display.Struct{Value: b.curr, Heading: b.name})
+func (b *Float) AddToDisplay(d []*display.Struct) []*display.Struct {
+	if b.disp {
+		d = append(d, &display.Struct{Value: b.curr, Heading: b.name})
+	}
+	return d
 }
 
 // Hist returns the history of the value over the course of the optimization
@@ -241,14 +250,11 @@ func (b *Float) SetInit(val float64) {
 
 // Initialize initializes the Float to be ready to optimize
 // This should be called by the optimizer
-func (b *Float) Initialize() error {
-	if b.hist == nil {
-		b.hist = make([]float64, 0)
-	}
+func (b *Float) Initialize() {
 	b.hist = b.hist[:0]
 	b.curr = b.init
 	b.opt = math.NaN()
-	return nil
+	return
 }
 
 func (b *Float) Name() string {
@@ -260,17 +266,10 @@ func (b *Float) Opt() float64 {
 	return b.opt
 }
 
-// Reset causes the float to be in the condition in which it should be a
-// at the initial stage of the optimization.
-func (b *Float) Reset(init float64) {
+// SetResult sets the result and resets for another optimization.
+// This should be called by the optimizer at the end of optimization
+func (b *Float) SetResult(init float64) {
 	b.init = init
-	b.hist = b.hist[:0]
-	b.opt = math.NaN()
-}
-
-// SetResult sets the result. This should be called by the optimizer
-// at the end of optimization
-func (b *Float) SetResult() {
 	b.opt = b.curr
 }
 
@@ -331,14 +330,14 @@ func (b *TolFloat) SetCurr(val float64) {
 }
 
 // Initializes. Only the optimizer should need
-func (b *TolFloat) Initialize() error {
+func (b *TolFloat) Initialize() {
 	err := b.Float.Initialize()
 	if err != nil {
 		return err
 	}
 	b.absCurr = math.Abs(b.curr)
 	b.absInit = math.Abs(b.init)
-	return nil
+	return
 }
 
 // Gets Init from Float
@@ -372,14 +371,14 @@ type BoundedFloat struct {
 	initGap float64
 }
 
-func NewBoundedFloat(name string, absTolConv convergence.C, relTolConv convergence.C) *BoundedFloat {
+func NewBoundedFloat(name string, lb float64, ub float64, absTolConv convergence.C, relTolConv convergence.C) *BoundedFloat {
 	return &BoundedFloat{
 		TolFloat: NewTolFloat(name, absTolConv, relTolConv),
 	}
 
 }
 
-func (s *BoundedFloat) Initialize() error {
+func (s *BoundedFloat) Initialize() {
 	s.TolFloat.Initialize()
 	s.initGap = s.ub - s.lb
 	s.gap = s.ub - s.lb
@@ -389,7 +388,7 @@ func (s *BoundedFloat) Initialize() error {
 	if s.curr <= 0 {
 		return fmt.Errorf("Initial step size must be positive")
 	}
-	return nil
+	return
 }
 
 func (s *BoundedFloat) Lb() float64 {
@@ -411,9 +410,12 @@ func (s *BoundedFloat) SetUb(val float64) {
 }
 
 // Gradient should display the norm and not the actual value
-func (b *BoundedFloat) Display(d []*display.Struct) []*display.Struct {
-	return append(d, &display.Struct{Value: b.ub, Heading: b.name + "UB"},
-		&display.Struct{Value: b.ub, Heading: b.name + "UB"})
+func (b *BoundedFloat) AddToDisplay(d []*display.Struct) []*display.Struct {
+	if b.disp {
+		b = append(d, &display.Struct{Value: b.ub, Heading: b.name + "UB"},
+			&display.Struct{Value: b.ub, Heading: b.name + "UB"})
+	}
+	return b
 }
 
 /*
@@ -426,10 +428,10 @@ func (s *BoundedFloat) AppendValues(vals []interface{}) []interface{} {
 }
 */
 
-func (b *BoundedFloat) Reset(init float64) {
-	b.TolFloat.Reset(init)
-	b.ub = math.Inf(1)
-	b.lb = math.Inf(-1)
+func (b *BoundedFloat) SetResult(init, ub, lb float64) {
+	b.TolFloat.SetResult(init)
+	b.ub = ub
+	b.lb = lb
 }
 
 // Midpoint between the bounds
