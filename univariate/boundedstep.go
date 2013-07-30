@@ -2,8 +2,8 @@ package univariate
 
 import (
 	"errors"
-	"gofunopter/convergence"
-	"gofunopter/display"
+	"github.com/btracey/gofunopter/convergence"
+	"github.com/btracey/gofunopter/display"
 	"math"
 )
 

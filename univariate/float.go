@@ -2,7 +2,7 @@ package univariate
 
 import (
 	"errors"
-	"gofunopter/display"
+	"github.com/btracey/gofunopter/display"
 	"math"
 )
 

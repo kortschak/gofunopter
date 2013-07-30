@@ -1,7 +1,7 @@
 package univariate
 
 import (
-	"gofunopter/convergence"
+	"github.com/btracey/gofunopter/convergence"
 	"math"
 )
 
