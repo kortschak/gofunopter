@@ -16,7 +16,13 @@ type Struct struct {
 // Displayer is an interface for displaying values and headings
 type Displayer interface {
 	AddToDisplay([]*Struct) []*Struct
-	Disp() bool
+}
+
+func AddToDisplay(d []*Struct, disper ...Displayer) []*Struct {
+	for _, val := range disper {
+		d = val.AddToDisplay(d)
+	}
+	return d
 }
 
 type Display struct {
@@ -40,6 +46,19 @@ func NewDisplay() *Display {
 		lastHeadingDisplay: math.MaxInt32 - 1, // High number so triggered on the first pass
 		//lastValueDisplay:   Initialize to zero time so we print on the first iteration
 	}
+}
+
+func (o *Display) Reset() {
+	o.lastHeadingDisplay = math.MaxInt32 - 1
+	o.lastValueDisplay = time.Time{}
+}
+
+func (o *Display) SetValueDisplayInterval(d time.Duration) {
+	o.valueInterval = d
+}
+
+func (o *Display) SetHeadingDisplayInterval(i int) {
+	o.headingInterval = i
 }
 
 func (o *Display) IncreaseValueTime() {
@@ -69,12 +88,10 @@ func (o *Display) SetDisp(b bool) {
 func (o *Display) DisplayProgress(displayers ...Displayer) {
 	// Check that it's been long enough to display values
 	if time.Since(o.lastValueDisplay) > o.valueInterval {
+		o.structs = o.structs[:0]
 		// Collect all the values and headings to be displayed
 		for _, displayer := range displayers {
-			o.structs = o.structs[:0]
-			if displayer.Disp() {
-				o.structs = displayer.AddToDisplay(o.structs)
-			}
+			o.structs = displayer.AddToDisplay(o.structs)
 			/*
 				o.structs = o.structs[:0]
 				if common.Disp() {

@@ -85,6 +85,7 @@ func (i *Incrementor) Opt() int {
 // SetResult sets the result of the Incrementor at the end of the optimization
 func (i *Incrementor) SetResult() {
 	i.total = i.curr
+	i.curr = 0
 }
 
 // Incrementor doesn't need to implement Reset because there are no settings

@@ -34,8 +34,11 @@ func NewOptCommon() *OptCommon {
 	return c
 }
 
+// All the names have common because we don't want to
+
 func (c *OptCommon) AddToDisplay(d []*display.Struct) []*display.Struct {
 	//return append(d, &display.Struct{Value: c.curr, Heading: c.name})
+	// AddToDisplay can't change because it needs to satisfy displayer interface
 	d = c.iter.AddToDisplay(d)
 	d = c.funEvals.AddToDisplay(d)
 	d = c.time.AddToDisplay(d)
@@ -49,15 +52,15 @@ func (c *OptCommon) GetOptCommon() *OptCommon {
 }
 
 // Converged checks if any of the elements of common have converged
-func (c *OptCommon) Converged() convergence.C {
+func (c *OptCommon) CommonConverged() convergence.C {
 	return convergence.CheckConvergence(c.iter, c.funEvals, c.time)
 }
 
-func (c *OptCommon) Disp() bool {
+func (c *OptCommon) CommonDisp() bool {
 	return c.disp
 }
 
-func (c *OptCommon) SetDisp(b bool) {
+func (c *OptCommon) SetCommonDisp(b bool) {
 	c.disp = b
 }
 
@@ -76,13 +79,13 @@ func (c *OptCommon) Time() *Time {
 }
 
 // Initialize the common structure at the start of a run.
-func (c *OptCommon) Initialize() {
+func (c *OptCommon) CommonInitialize() {
 	c.time.Initialize()
 	c.funEvals.Initialize()
 	c.iter.Initialize()
 }
 
-func (c *OptCommon) SetResult() {
+func (c *OptCommon) CommonSetResult() {
 	//SetResults(c.iter, c.funEvals, c.runtime)
 	c.iter.SetResult()
 	c.funEvals.SetResult()
@@ -115,7 +118,7 @@ type FunctionEvaluations struct {
 
 func NewFunctionEvaluations() *FunctionEvaluations {
 	return &FunctionEvaluations{
-		Incrementor: NewIncrementor("FunEvals", math.MaxInt32-1, convergence.FunEvals, true),
+		Incrementor: NewIncrementor("FunEval", math.MaxInt32-1, convergence.FunEvals, true),
 	}
 }
 

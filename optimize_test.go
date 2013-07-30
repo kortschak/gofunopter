@@ -1,12 +1,12 @@
 package gofunopter
 
 import (
+	"fmt"
 	"gofunopter/common"
 	"gofunopter/convergence"
 	"gofunopter/display"
+	"gofunopter/optimize"
 	"testing"
-
-	"fmt"
 )
 
 type Template struct {
@@ -61,7 +61,7 @@ func TestFunEvalsConvergence(t *testing.T) {
 	opt.FunEvals().SetMax(10)
 
 	fmt.Println("Starting call to optimize")
-	c, err := OptimizeOpter(opt, fun)
+	c, err := optimize.OptimizeOpter(opt, fun)
 	if err != nil {
 		t.Errorf("Error during optimization: " + err.Error())
 	}
@@ -80,9 +80,7 @@ func TestIterationsConvergence(t *testing.T) {
 
 	opt := NewTemplate()
 	opt.Iter().SetMax(10)
-
-	fmt.Println("Starting call to optimize")
-	c, err := OptimizeOpter(opt, fun)
+	c, err := optimize.OptimizeOpter(opt, fun)
 	if err != nil {
 		t.Errorf("Error during optimization: " + err.Error())
 	}

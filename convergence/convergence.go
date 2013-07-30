@@ -12,8 +12,6 @@ func CheckConvergence(cs ...Converger) C {
 	return nil
 }
 
-const DefaultGradAbsTol = 1E-6
-
 // Use type casting for varieties of convergence (grad, etc.)
 // use call to convergence for specific convergence test
 
@@ -38,34 +36,21 @@ func (b Basic) String() string {
 }
 
 // Grad is a type marking the convergence of the optimizer because of the gradient
-type Grad Basic
-
-// Converged returns the specific string for the convergence
-func (g Grad) Convergence() string {
-	return g.Str
-}
+type Grad struct{ Basic }
 
 // GradAbsTol is a convergence because of meaning the absolute tolerance of the gradient
-var GradAbsTol Grad = Grad{"convergence: gradient absolute tolerance reached"}
-var GradRelTol Grad = Grad{"convergence: gradient relative tolerance reached"}
+var GradAbsTol Grad = Grad{Basic{"convergence: gradient absolute tolerance reached"}}
+var GradRelTol Grad = Grad{Basic{"convergence: gradient relative tolerance reached"}}
 
-type Obj Basic
+type Obj struct{ Basic }
 
-func (o Obj) Convergence() string {
-	return o.Str
-}
+var ObjAbsTol Obj = Obj{Basic{"convergence: function absolute tolerance reached"}}
+var ObjRelTol Obj = Obj{Basic{"convergence: function relative tolerance reached"}}
 
-var ObjAbsTol Obj = Obj{"convergence: function absolute tolerance reached"}
-var ObjRelTol Obj = Obj{"convergence: function relative tolerance reached"}
+type Step struct{ Basic }
 
-type Step Basic
-
-func (s Step) Convergence() string {
-	return s.Str
-}
-
-var StepAbsTol Step = Step{"convergence: step absolute tolerance reached"}
-var StepRelTol Step = Step{"convergence: step relative tolerance reached"}
+var StepAbsTol Step = Step{Basic{"convergence: step absolute tolerance reached"}}
+var StepRelTol Step = Step{Basic{"convergence: step relative tolerance reached"}}
 
 var Iterations Basic = Basic{"convergence: maximum iterations reached"}
 var FunEvals Basic = Basic{"convergence: maximum function evaluations reached"}
