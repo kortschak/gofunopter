@@ -4,8 +4,8 @@
 package common
 
 import (
-	"gofunopter/convergence"
-	"gofunopter/display"
+	"github.com/btracey/gofunopter/convergence"
+	"github.com/btracey/gofunopter/display"
 	"math"
 	"time"
 )

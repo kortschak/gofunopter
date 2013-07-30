@@ -1,7 +1,7 @@
 package multivariate
 
 import (
-	"gofunopter/display"
+	"github.com/btracey/gofunopter/display"
 
 	"errors"
 	"github.com/gonum/floats"

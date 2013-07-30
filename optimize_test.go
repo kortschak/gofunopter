@@ -2,10 +2,10 @@ package gofunopter
 
 import (
 	"fmt"
-	"gofunopter/common"
-	"gofunopter/convergence"
-	"gofunopter/display"
-	"gofunopter/optimize"
+	"github.com/btracey/gofunopter/common"
+	"github.com/btracey/gofunopter/convergence"
+	"github.com/btracey/gofunopter/display"
+	"github.com/btracey/gofunopter/optimize"
 	"testing"
 )
 

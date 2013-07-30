@@ -3,13 +3,13 @@ package gofunopter
 // Change common so that it doesn't implement the optimizer stuff (force optimizer to write it)
 
 import (
-	"gofunopter/common"
-	"gofunopter/convergence"
-	"gofunopter/display"
-	"gofunopter/linesearch"
-	"gofunopter/multivariate"
-	"gofunopter/optimize"
-	"gofunopter/univariate"
+	"github.com/btracey/gofunopter/common"
+	"github.com/btracey/gofunopter/convergence"
+	"github.com/btracey/gofunopter/display"
+	"github.com/btracey/gofunopter/linesearch"
+	"github.com/btracey/gofunopter/multivariate"
+	"github.com/btracey/gofunopter/optimize"
+	"github.com/btracey/gofunopter/univariate"
 
 	"errors"
 	"fmt"

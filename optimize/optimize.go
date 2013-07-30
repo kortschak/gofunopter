@@ -5,8 +5,8 @@ package optimize
 import (
 	"errors"
 	//"fmt"
-	"gofunopter/convergence"
-	"gofunopter/display"
+	"github.com/btracey/gofunopter/convergence"
+	"github.com/btracey/gofunopter/display"
 )
 
 // OptimizeOpter is the basic method for using optimizers. Not intended to

@@ -1,7 +1,7 @@
 package linesearch
 
 import (
-	"gofunopter/convergence"
+	"github.com/btracey/gofunopter/convergence"
 	"math"
 )
 

@@ -1,11 +1,11 @@
 package optimize
 
 import (
-	"gofunopter/common"
-	"gofunopter/convergence"
-	"gofunopter/display"
-	"gofunopter/multivariate"
-	"gofunopter/univariate"
+	"github.com/btracey/gofunopter/common"
+	"github.com/btracey/gofunopter/convergence"
+	"github.com/btracey/gofunopter/display"
+	"github.com/btracey/gofunopter/multivariate"
+	"github.com/btracey/gofunopter/univariate"
 )
 
 type Optimizer interface {

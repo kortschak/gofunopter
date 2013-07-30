@@ -5,9 +5,9 @@ import (
 	"github.com/gonum/floats"
 
 	//"gofunopter/common"
-	"gofunopter/convergence"
-	"gofunopter/optimize"
-	"gofunopter/univariate"
+	"github.com/btracey/gofunopter/convergence"
+	"github.com/btracey/gofunopter/optimize"
+	"github.com/btracey/gofunopter/univariate"
 
 	"fmt"
 )

@@ -1,8 +1,8 @@
 package gofunopter
 
 import (
-	"gofunopter/convergence"
-	"gofunopter/optimize"
+	"github.com/btracey/gofunopter/convergence"
+	"github.com/btracey/gofunopter/optimize"
 
 	"fmt"
 	"math"

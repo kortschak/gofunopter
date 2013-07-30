@@ -3,11 +3,11 @@ package gofunopter
 import (
 	"errors"
 
-	"gofunopter/common"
-	"gofunopter/convergence"
-	"gofunopter/display"
-	"gofunopter/optimize"
-	"gofunopter/univariate"
+	"github.com/btracey/gofunopter/common"
+	"github.com/btracey/gofunopter/convergence"
+	"github.com/btracey/gofunopter/display"
+	"github.com/btracey/gofunopter/optimize"
+	"github.com/btracey/gofunopter/univariate"
 	"math"
 
 	//"fmt"
