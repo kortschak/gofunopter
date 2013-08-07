@@ -90,6 +90,10 @@ func Linesearch(linesearchOpt Optimizable, method Method, wolfe WolfeConditioner
 	// Find the initial projection of the gradient into the search direction
 	initDirectionalGrad := floats.Dot(direction, initGrad)
 
+	if initDirectionalGrad > 0 {
+		return &Result{}, errors.New("initial directional gradient must be negative")
+	}
+
 	// Set wolfe constants
 	wolfe.SetInitState(initObj, initDirectionalGrad)
 	wolfe.SetCurrState(initObj, initDirectionalGrad, 1.0)
@@ -104,14 +108,13 @@ func Linesearch(linesearchOpt Optimizable, method Method, wolfe WolfeConditioner
 	}
 
 	// Initialize the optimization routine
-	method.Loc().SetInit(0)
 	method.Obj().SetInit(initObj)
 	method.Grad().SetInit(initDirectionalGrad)
 	method.Step().SetInit(normSearchVector)
 	//method.SetDisp(false)
 
-	// Run optimization
-	convergence, err := method.Optimize(fun)
+	// Run optimization, initial location is zero
+	_, _, convergence, err := method.Optimize(fun, 0)
 	//convergence, err := optimize.OptimizeOpter(method, fun)
 
 	// Regerate results structure (do this before returning error in case optimizer can recover from it)

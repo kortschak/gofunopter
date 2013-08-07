@@ -102,7 +102,7 @@ func DisplayOpter(optDisplay *display.Display, o Optimizer, common, displayer di
 	// Display the outputs (if toggle is on)
 	if o.Disp() {
 		if isDisplayer {
-			optDisplay.DisplayProgress(o, common, displayer)
+			optDisplay.DisplayProgress(common, o, displayer)
 		} else {
 			optDisplay.DisplayProgress(common, o)
 		}

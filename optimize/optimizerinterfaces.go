@@ -28,7 +28,7 @@ type SisoGradOptimizer interface {
 	Obj() *univariate.Objective
 	Grad() *univariate.Gradient
 	Fun() SisoGrad
-	Optimize(SisoGrad) (convergence.C, error)
+	Optimize(SisoGrad, float64) (float64, float64, convergence.C, error)
 }
 
 type MisoGradOptimizer interface {
@@ -37,5 +37,5 @@ type MisoGradOptimizer interface {
 	Obj() *univariate.Objective
 	Grad() *multivariate.Gradient
 	Fun() MisoGrad
-	Optimize(MisoGrad) (convergence.C, error)
+	Optimize(MisoGrad, []float64) (float64, []float64, convergence.C, error)
 }

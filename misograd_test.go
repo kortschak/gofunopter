@@ -81,12 +81,12 @@ func MisoGradBasedTest(t *testing.T, opter optimize.MisoGradOptimizer) {
 	funcs := MisoGradFunctions()
 	for _, fun := range funcs {
 		// Run it once until very converged
-		opter.Loc().SetInit(fun.InitLoc)
+		//opter.Loc().SetInit(fun.InitLoc)
 		opter.Grad().SetAbsTol(1E-14)
 		opter.GetOptCommon().FunEvals().SetMax(1000)
 		opter.GetDisplay().SetValueDisplayInterval(0)
 		fmt.Println("Is misograd_test, starting optimizer")
-		c, err := opter.Optimize(fun)
+		optVal, optLoc, c, err := opter.Optimize(fun, fun.InitLoc)
 		if err != nil {
 			t.Errorf("Error during optimization for function " + fun.name + ": " + err.Error())
 			continue
@@ -99,12 +99,12 @@ func MisoGradBasedTest(t *testing.T, opter optimize.MisoGradOptimizer) {
 			t.Errorf("For function " + fun.name + " convergence is not GradAbsTol. It is instead " + c.Convergence())
 			continue
 		}
-		firstObjVal := opter.Obj().Opt()
+		firstObjVal := optVal
 		if math.Abs(firstObjVal-fun.OptVal()) > MISO_TOLERANCE {
 			t.Errorf("For function "+fun.name+" optimum value not found. %v found, %v expected", firstObjVal, fun.OptVal())
 			continue
 		}
-		firstLocVal := opter.Loc().Opt()
+		firstLocVal := optLoc
 		if !floats.Eq(firstLocVal, fun.OptLoc(), MISO_TOLERANCE) {
 			t.Errorf("For function "+fun.name+" optimum location not found. %v found, %v expected", firstLocVal, fun.OptLoc())
 		}
@@ -113,8 +113,8 @@ func MisoGradBasedTest(t *testing.T, opter optimize.MisoGradOptimizer) {
 		// Hack to reset FunEvals
 
 		// Run it again to test that the reset works fine
-		opter.Loc().SetInit(fun.InitLoc)
-		c, err = opter.Optimize(fun)
+		//opter.Loc().SetInit(fun.InitLoc)
+		_, _, c, err = opter.Optimize(fun, fun.InitLoc)
 		if err != nil {
 			t.Errorf("Error while re-using optimizer")
 		}

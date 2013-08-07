@@ -67,9 +67,13 @@ func NewCubic() *Cubic {
 	}
 }
 
-func (c *Cubic) Optimize(fun optimize.SisoGrad) (convergence.C, error) {
+func (c *Cubic) Optimize(fun optimize.SisoGrad, initialLocation float64) (optimumValue float64, optimumLocation float64, convergenceType convergence.C, err error) {
 	c.fun = fun
-	return optimize.OptimizeOpter(c, fun)
+	c.loc.SetInit(initialLocation)
+	convergenceType, err = optimize.OptimizeOpter(c, fun)
+	optimumValue = c.obj.Opt()
+	optimumLocation = c.loc.Opt()
+	return
 }
 
 func (c *Cubic) Disp() bool {

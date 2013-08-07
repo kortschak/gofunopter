@@ -1,7 +1,5 @@
 package gofunopter
 
-// Change common so that it doesn't implement the optimizer stuff (force optimizer to write it)
-
 import (
 	"github.com/btracey/gofunopter/common"
 	"github.com/btracey/gofunopter/convergence"
@@ -80,9 +78,13 @@ func NewLbfgs() *Lbfgs {
 	return l
 }
 
-func (lbfgs *Lbfgs) Optimize(fun optimize.MisoGrad) (convergence.C, error) {
+func (lbfgs *Lbfgs) Optimize(fun optimize.MisoGrad, loc []float64) (optimumValue float64, optimumLocation []float64, convergenceType convergence.C, err error) {
 	lbfgs.fun = fun
-	return optimize.OptimizeOpter(lbfgs, fun)
+	lbfgs.loc.SetInit(loc)
+	convergenceType, err = optimize.OptimizeOpter(lbfgs, fun)
+	optimumValue = lbfgs.obj.Opt()
+	optimumLocation = lbfgs.loc.Opt()
+	return
 }
 
 func (lbfgs *Lbfgs) Wolfe() linesearch.WolfeConditioner {
@@ -273,12 +275,12 @@ func (lbfgs *Lbfgs) Iterate() (int, error) {
 	if lbfgs.linesearchMethod.Disp() {
 		fmt.Println("Done linesearch")
 	}
+
 	// In the future add a check to switch to a different linesearcher?
 	nFunEvals += linesearchResult.NFunEvals
 	if err != nil {
 		return nFunEvals, err
 	}
-
 	x_kp1 := linesearchResult.Loc
 	f_kp1 := linesearchResult.Obj
 	g_kp1 := linesearchResult.Grad
