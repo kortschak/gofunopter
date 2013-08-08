@@ -36,6 +36,10 @@ func SisoGradBasedTest(t *testing.T, opter UniGradOptimizer) {
 		settings.GradientAbsoluteTolerance = 1e-14
 		settings.MaxIterations = 50
 
+		fmt.Println("Init loc", fun.InitLoc)
+		fmt.Println("Settings", settings)
+		fmt.Printf("opter %#v \n", opter)
+
 		optVal, optLoc, result, err := OptimizeGrad(fun, fun.InitLoc, settings, opter)
 
 		//optVal, optLoc, c, err := opter.Optimize(fun, fun.InitLoc)
@@ -67,6 +71,10 @@ func SisoGradBasedTest(t *testing.T, opter UniGradOptimizer) {
 		firstNIterations := result.Iterations
 
 		// Hack to reset FunEvals
+
+		fmt.Println("Init loc", fun.InitLoc)
+		fmt.Println("Settings", settings)
+		fmt.Printf("opter %#v \n", opter)
 
 		// Run it again to test that the reset works fine
 		//opter.Loc().SetInit(fun.InitLoc)

@@ -127,7 +127,11 @@ func (m *uniGradStruct) AddToDisplay(d []*display.Struct) []*display.Struct {
 func (u *uniGradStruct) SetResult(c *common.CommonResult) {
 	optimize.SetResult(u.loc, u.grad, u.obj)
 	u.result.CommonResult = c
-	//u.result.Convergence = conv
+
+	setResulter, ok := u.optimizer.(optimize.SetResulter)
+	if ok {
+		setResulter.SetResult()
+	}
 }
 
 func (u *uniGradStruct) Initialize() error {

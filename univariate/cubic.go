@@ -7,7 +7,7 @@ import (
 	"github.com/btracey/gofunopter/optimize"
 	"math"
 
-	//"fmt"
+	"fmt"
 )
 
 // A cubic optimizer optimizes by making successive
@@ -16,11 +16,11 @@ type Cubic struct {
 	step *uni.BoundedStep
 
 	// Tunable parameters
-	stepDecreaseMin     float64 // Minimum allowable decrease (must be a number between [0,1)) default 0.0001
-	stepDecreaseMax     float64 // When decreasing what is the high
-	stepIncreaseMin     float64
-	stepIncreaseMax     float64
-	floatingpointRelTol float64 // At what point should you stop trusting the objective falue
+	StepDecreaseMin     float64 // Minimum allowable decrease (must be a number between [0,1)) default 0.0001
+	StepDecreaseMax     float64 // When decreasing what is the high
+	StepIncreaseMin     float64
+	StepIncreaseMax     float64
+	FloatingpointRelTol float64 // At what point should you stop trusting the objective falue
 
 	// Other needed data during the run
 	prevF                     float64 // The f before the current one
@@ -35,27 +35,33 @@ func NewCubic() *Cubic {
 		step: uni.NewBoundedStep(),
 
 		// Default Settings
-		stepDecreaseMin: 1E-4,
-		stepDecreaseMax: 0.9,
-		stepIncreaseMin: 1.25,
-		stepIncreaseMax: 1E3,
+		StepDecreaseMin: 1E-4,
+		StepDecreaseMax: 0.9,
+		StepIncreaseMin: 1.25,
+		StepIncreaseMax: 1E3,
 
-		floatingpointRelTol: 1E-15, // dealing with numerical errors in the function value
+		FloatingpointRelTol: 1E-15, // dealing with numerical errors in the function value
 	}
 }
 
 func (c *Cubic) Initialize(loc *uni.Location, obj *uni.Objective, grad *uni.Gradient) (err error) {
 
-	if c.step.Init() == math.NaN() {
-		c.step.SetInit(1)
-	}
+	//if c.step.Init() == math.NaN() {
+	//	c.step.SetInit(1)
+	//}
 	// Now initialize the three to set the initial location to the current location
 	err = c.step.Initialize()
 	if err != nil {
 		return errors.New("cubic: error initializing: " + err.Error())
 	}
 
+	fmt.Println("In cubic initialize")
+	fmt.Printf("loc %#v \n", loc)
+	fmt.Printf("obj %#v \n", obj)
+	fmt.Printf("grad %#v \n", grad)
+
 	// Initialize the rest of the memory
+	c.prevF = obj.Init()
 	c.initialGradNegative = (grad.Curr() < 0)
 	c.currStepDirectionPositive = true
 	c.deltaCurrent = 0.0 // How far is the current point from the initial point
@@ -106,21 +112,19 @@ func (cubic *Cubic) Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gra
 	obj.AddToHist(trialF)
 	grad.AddToHist(trialG)
 
-	/*
-		fmt.Println()
-		fmt.Println("curr step size", cubic.step.Curr())
-		fmt.Println("LB", cubic.step.Lb())
-		fmt.Println("UB", cubic.step.Ub())
-		fmt.Println("initX", loc.Init())
-		fmt.Println("currX", loc.Curr())
-		fmt.Println("trialX ", trialX)
-		fmt.Println("InitF \t", obj.Init())
-		fmt.Println("currF \t", currF)
-		fmt.Println("trialF \t", trialF)
-		fmt.Println("InitG", grad.Init())
-		fmt.Println("currG", currG)
-		fmt.Println("trialG", trialG)
-	*/
+	fmt.Println()
+	fmt.Println("curr step size", cubic.step.Curr())
+	fmt.Println("LB", cubic.step.Lb())
+	fmt.Println("UB", cubic.step.Ub())
+	fmt.Println("initX", loc.Init())
+	fmt.Println("currX", loc.Curr())
+	fmt.Println("trialX ", trialX)
+	fmt.Println("InitF \t", obj.Init())
+	fmt.Println("currF \t", currF)
+	fmt.Println("trialF \t", trialF)
+	fmt.Println("InitG", grad.Init())
+	fmt.Println("currG", currG)
+	fmt.Println("trialG", trialG)
 
 	absTrialG := math.Abs(trialG)
 
@@ -138,7 +142,7 @@ func (cubic *Cubic) Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gra
 	if divisor == 0 {
 		canTrustDeltaF = true // Both are zero, so is >= 0
 	} else {
-		if math.Abs(deltaF) > divisor*cubic.floatingpointRelTol {
+		if math.Abs(deltaF) > divisor*cubic.FloatingpointRelTol {
 			// Change large enough to trust
 			canTrustDeltaF = true
 		}
@@ -241,7 +245,7 @@ func (cubic *Cubic) Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gra
 			updateCurrPoint = true
 
 			if decreaseInDerivMagnitude {
-				if minCubic < cubic.stepIncreaseMin {
+				if minCubic < cubic.StepIncreaseMin {
 					// Cubic gave a bad approximation (minimum is more
 					// in this direction). Assume linear decrease in
 					// derivative
@@ -255,7 +259,7 @@ func (cubic *Cubic) Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gra
 				// Found a better point, but the derivative increased
 				// Use cubic approximation if it gives a reasonable guess
 				// otherwise just project forward
-				if minCubic < cubic.stepIncreaseMin {
+				if minCubic < cubic.StepIncreaseMin {
 					stepMultiplier = cubic.unclearStepIncrease(loc.Curr())
 				} else {
 					stepMultiplier = cubic.sizeIncrease(minCubic)
@@ -373,13 +377,13 @@ func (c *Cubic) setBound(dir string) {
 
 func (c *Cubic) sizeDecrease(minCubic float64) float64 {
 
-	stepMultiplier := math.Max(minCubic, c.stepDecreaseMin)
-	stepMultiplier = math.Min(stepMultiplier, c.stepDecreaseMax)
+	stepMultiplier := math.Max(minCubic, c.StepDecreaseMin)
+	stepMultiplier = math.Min(stepMultiplier, c.StepDecreaseMax)
 	return stepMultiplier
 }
 
 func (c *Cubic) sizeIncrease(minCubic float64) float64 {
-	stepMultiplier := math.Max(minCubic, c.stepIncreaseMin)
-	stepMultiplier = math.Min(stepMultiplier, c.stepIncreaseMax)
+	stepMultiplier := math.Max(minCubic, c.StepIncreaseMin)
+	stepMultiplier = math.Min(stepMultiplier, c.StepIncreaseMax)
 	return stepMultiplier
 }
