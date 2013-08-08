@@ -5,14 +5,24 @@ package optimize
 import (
 	"errors"
 	//"fmt"
+	"github.com/btracey/gofunopter/common"
 	"github.com/btracey/gofunopter/convergence"
 	"github.com/btracey/gofunopter/display"
 )
 
 // OptimizeOpter is the basic method for using optimizers. Not intended to
 // be called by the user
-func OptimizeOpter(o Optimizer, fun interface{}) (convergence.C, error) {
+func OptimizeOpter(o Optimizer, fun interface{}) (convergence.Type, error) {
 	var err error
+	// Set all the settings
+	commonSettings := o.CommonSettings()
+
+	// Initialize the common value
+	common := o.GetOptCommon()
+	common.SetSettings(commonSettings)
+
+	o.SetSettings()
+
 	// Initialize the caller's function if it is an initializer
 	initer, ok := fun.(Initializer)
 	if ok {
@@ -21,13 +31,7 @@ func OptimizeOpter(o Optimizer, fun interface{}) (convergence.C, error) {
 			return nil, errors.New("opt: errer during user defined function initialization")
 		}
 	}
-
-	// Initialize the common value
-	common := o.GetOptCommon()
 	common.CommonInitialize()
-
-	// Get the displayer
-	optDisplay := o.GetDisplay()
 
 	// Initialize the optimizer
 	err = o.Initialize()
@@ -35,17 +39,18 @@ func OptimizeOpter(o Optimizer, fun interface{}) (convergence.C, error) {
 		return nil, errors.New("opt: error during optimizer initialization, " + err.Error())
 	}
 
+	// Get the displayer
+	optDisplay := o.GetDisplay()
+
 	// Defer call to set result
 	// Want to return the result even if there is an error (don't want to waste function
 	// evaluations if the caller can handle the error)
 	// Want to defer call to user-defined set result first to it can unwind after the
 	// optimizer does
-	setResulter, ok := fun.(SetResulter)
-	if ok {
-		setResulter.SetResult()
-	}
-	defer o.SetResult()
-	defer common.CommonSetResult()
+
+	defer SetOptResults(o, common, fun)
+	//defer o.SetResult()
+	//defer common.CommonSetResult()
 
 	// Main optimization loop:
 	// Iterate until convergence, outputting the display as we go (assuming)
@@ -54,7 +59,7 @@ func OptimizeOpter(o Optimizer, fun interface{}) (convergence.C, error) {
 	converger, isConverger := fun.(convergence.Converger)
 	displayer, isDisplayer := fun.(display.Displayer)
 
-	var c convergence.C
+	var c convergence.Type
 	for {
 		// Check if the optimizer has converged
 		c = o.Converged()
@@ -106,5 +111,14 @@ func DisplayOpter(optDisplay *display.Display, o Optimizer, common, displayer di
 		} else {
 			optDisplay.DisplayProgress(common, o)
 		}
+	}
+}
+
+func SetOptResults(o Optimizer, c *common.OptCommon, fun interface{}) {
+	commonResult := c.CommonResult()
+	o.SetResult(commonResult)
+	setResulter, ok := fun.(SetResulter)
+	if ok {
+		setResulter.SetResult()
 	}
 }

@@ -2,7 +2,7 @@ package convergence
 
 // CheckConvergence checks the convergence of a variadic
 // number of converges and returns the first non-nil result
-func CheckConvergence(cs ...Converger) C {
+func CheckConvergence(cs ...Converger) Type {
 	for _, val := range cs {
 		c := val.Converged()
 		if c != nil {
@@ -17,11 +17,11 @@ func CheckConvergence(cs ...Converger) C {
 
 // A converger is a type that can test if the optimization has converged
 type Converger interface {
-	Converged() C
+	Converged() Type
 }
 
 // C is a basic interface for expressing methods of optimizer convergence
-type C interface {
+type Type interface {
 	Convergence() string
 }
 

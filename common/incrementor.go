@@ -11,14 +11,14 @@ type Incrementor struct {
 	max   int // Maximum allowable value of the Incrementor
 	curr  int // current value of the Incrementor
 	total int // Total number at the end of the optimization run
-	conv  convergence.C
+	conv  convergence.Type
 	name  string
 	disp  bool
 }
 
 // No Incrementor iterate method because we don't know how many we want to add on each iteration
 
-func NewIncrementor(name string, max int, conv convergence.C, disp bool) *Incrementor {
+func NewIncrementor(name string, max int, conv convergence.Type, disp bool) *Incrementor {
 	return &Incrementor{
 		name: name,
 		max:  max,
@@ -41,7 +41,7 @@ func (i *Incrementor) AddToDisplay(d []*display.Struct) []*display.Struct {
 
 // Converged checks if the value of the Incrementor is greater
 // than the maximum set value
-func (i *Incrementor) Converged() convergence.C {
+func (i *Incrementor) Converged() convergence.Type {
 	if i.curr >= i.max {
 		return i.conv
 	}

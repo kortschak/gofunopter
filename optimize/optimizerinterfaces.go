@@ -4,13 +4,11 @@ import (
 	"github.com/btracey/gofunopter/common"
 	"github.com/btracey/gofunopter/convergence"
 	"github.com/btracey/gofunopter/display"
-	"github.com/btracey/gofunopter/multivariate"
-	"github.com/btracey/gofunopter/univariate"
 )
 
 type Optimizer interface {
 	Initializer
-	SetResulter
+	//SetResulter
 	convergence.Converger
 	display.Displayer
 	Disp() bool
@@ -20,22 +18,27 @@ type Optimizer interface {
 	GetDisplay() *display.Display
 	FunEvals() *common.FunctionEvaluations
 	Iter() *common.Iterations
+	SetSettings() error
+	CommonSettings() *common.CommonSettings
+	SetResult(*common.CommonResult)
 }
 
+/*
 type SisoGradOptimizer interface {
 	Optimizer
-	Loc() *univariate.Location
-	Obj() *univariate.Objective
-	Grad() *univariate.Gradient
+	Loc() *uni.Location
+	Obj() *uni.Objective
+	Grad() *uni.Gradient
 	Fun() SisoGrad
 	Optimize(SisoGrad, float64) (float64, float64, convergence.C, error)
 }
 
 type MisoGradOptimizer interface {
 	Optimizer
-	Loc() *multivariate.Location
-	Obj() *univariate.Objective
-	Grad() *multivariate.Gradient
+	Loc() *multi.Location
+	Obj() *uni.Objective
+	Grad() *multi.Gradient
 	Fun() MisoGrad
 	Optimize(MisoGrad, []float64) (float64, []float64, convergence.C, error)
 }
+*/

@@ -1,5 +1,7 @@
 package optimize
 
+/*
+
 // This is in its own package because otherwise it's hard to avoid circular imports
 
 // Siso is an interface for a function input of a
@@ -23,7 +25,6 @@ type SisoGradIndividual interface {
 	Function(x float64) (f float64)
 	Gradient(x float64) (g float64)
 }
-*/
 
 type Miso interface {
 	Eval(x []float64) (f float64)
@@ -32,3 +33,4 @@ type Miso interface {
 type MisoGrad interface {
 	Eval(x []float64) (f float64, g []float64, err error)
 }
+*/

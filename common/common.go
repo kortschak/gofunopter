@@ -24,6 +24,26 @@ type OptCommon struct {
 	disp     bool
 }
 
+type CommonSettings struct {
+	MaxIterations              int
+	MaxFunctionEvaluations     int
+	MaxRuntime                 time.Duration
+	DisplayIterations          bool
+	DisplayFunctionEvaluations bool
+	DisplayRuntime             bool
+}
+
+func NewCommonSettings() *CommonSettings {
+	return &CommonSettings{
+		MaxIterations:              math.MaxInt32 - 1,
+		MaxFunctionEvaluations:     math.MaxInt32 - 1,
+		MaxRuntime:                 time.Duration(math.MaxInt64 - 1),
+		DisplayIterations:          true,
+		DisplayFunctionEvaluations: true,
+		DisplayRuntime:             true,
+	}
+}
+
 func NewOptCommon() *OptCommon {
 	c := &OptCommon{
 		iter:     NewIterations(),
@@ -32,6 +52,21 @@ func NewOptCommon() *OptCommon {
 		disp:     true,
 	}
 	return c
+}
+
+func (c *OptCommon) SetSettings(s *CommonSettings) {
+	c.iter.SetMax(s.MaxIterations)
+	c.funEvals.SetMax(s.MaxFunctionEvaluations)
+	c.time.SetMax(s.MaxRuntime)
+	c.iter.SetDisp(s.DisplayIterations)
+	c.funEvals.SetDisp(s.DisplayFunctionEvaluations)
+	c.time.SetDisp(s.DisplayRuntime)
+}
+
+type CommonResult struct {
+	Iterations          int
+	FunctionEvaluations int
+	Runtime             time.Duration
 }
 
 // All the names have common because we don't want to
@@ -52,7 +87,7 @@ func (c *OptCommon) GetOptCommon() *OptCommon {
 }
 
 // Converged checks if any of the elements of common have converged
-func (c *OptCommon) CommonConverged() convergence.C {
+func (c *OptCommon) CommonConverged() convergence.Type {
 	return convergence.CheckConvergence(c.iter, c.funEvals, c.time)
 }
 
@@ -85,11 +120,17 @@ func (c *OptCommon) CommonInitialize() {
 	c.iter.Initialize()
 }
 
-func (c *OptCommon) CommonSetResult() {
+func (c *OptCommon) CommonResult() *CommonResult {
 	//SetResults(c.iter, c.funEvals, c.runtime)
 	c.iter.SetResult()
 	c.funEvals.SetResult()
 	c.time.SetResult()
+
+	return &CommonResult{
+		Iterations:          c.iter.Opt(),
+		FunctionEvaluations: c.funEvals.Opt(),
+		Runtime:             c.time.Opt(),
+	}
 }
 
 type Iterations struct {
@@ -155,7 +196,7 @@ func (t *Time) AddToDisplay(d []*display.Struct) []*display.Struct {
 
 // Converged returns a convergence if the elapsed run time is
 // longer than the maximum allowed
-func (t *Time) Converged() convergence.C {
+func (t *Time) Converged() convergence.Type {
 	if time.Since(t.init) > t.max {
 		return convergence.Time
 	}

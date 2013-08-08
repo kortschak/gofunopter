@@ -7,10 +7,10 @@ const DefaultStepAbsTol = 1E-15 // any smaller and numerical issues happen
 // Converges if curr < tol
 type Abs struct {
 	tol  float64
-	conv C
+	conv Type
 }
 
-func NewAbs(tol float64, conv C) *Abs {
+func NewAbs(tol float64, conv Type) *Abs {
 	return &Abs{tol: tol, conv: conv}
 }
 
@@ -25,7 +25,7 @@ func (a *Abs) SetAbsTol(tol float64) {
 }
 
 // CheckConvergence checks if the absolute tolerance has been reached
-func (a *Abs) CheckConvergence(curr float64) C {
+func (a *Abs) CheckConvergence(curr float64) Type {
 	if curr < a.tol {
 		return a.conv
 	}
@@ -36,10 +36,10 @@ func (a *Abs) CheckConvergence(curr float64) C {
 // Converges if curr < tol * init
 type Rel struct {
 	tol  float64
-	conv C
+	conv Type
 }
 
-func NewRel(tol float64, conv C) *Rel {
+func NewRel(tol float64, conv Type) *Rel {
 	return &Rel{tol: tol, conv: conv}
 }
 
@@ -54,7 +54,7 @@ func (r *Rel) SetRelTol(tol float64) {
 }
 
 // CheckConvergence checks if the relative tolerance has been reached
-func (r *Rel) CheckConvergence(curr, init float64) C {
+func (r *Rel) CheckConvergence(curr, init float64) Type {
 	if curr < r.tol*init {
 		return r.conv
 	}

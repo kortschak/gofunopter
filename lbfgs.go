@@ -16,19 +16,8 @@ import (
 )
 
 type Lbfgs struct {
-	// Needed for general optimizer
-	*common.OptCommon
-	*display.Display
-	disp bool
-
 	// Basic structures for the state of the optimizer
-	loc  *multivariate.Location
-	obj  *univariate.Objective
-	grad *multivariate.Gradient
 	step *univariate.BoundedStep
-
-	// User defined function
-	fun optimize.MisoGrad
 
 	// Tunable Parameters
 	linesearchMethod   linesearch.Method
