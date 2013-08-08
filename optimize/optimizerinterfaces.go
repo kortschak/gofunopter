@@ -13,7 +13,7 @@ type Optimizer interface {
 	display.Displayer
 	Disp() bool
 	SetDisp(bool)
-	Iterate() (int, error)
+	Iterate() error
 	GetOptCommon() *common.OptCommon
 	GetDisplay() *display.Display
 	FunEvals() *common.FunctionEvaluations

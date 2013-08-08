@@ -29,8 +29,8 @@ type Objective struct {
 
 	delta     float64
 	initDelta float64 // initial change off of which the delta is based
-	relconv   convergence.C
-	absconv   convergence.C
+	relconv   convergence.Type
+	absconv   convergence.Type
 }
 
 // NewObjective returns the default objective structure
@@ -62,7 +62,7 @@ func (o *Objective) SetCurr(f []float64) {
 }
 
 // Converged tests if either AbsTol or RelTol have converged
-func (o *Objective) Converged() convergence.C {
+func (o *Objective) Converged() convergence.Type {
 	// Test absolute convergence
 	//c := o.Abs.CheckConvergence(o.norm)
 	//if c != nil {

@@ -25,8 +25,8 @@ type OptCommon struct {
 }
 
 type CommonSettings struct {
-	MaxIterations              int
-	MaxFunctionEvaluations     int
+	MaximumIterations          int
+	MaximumFunctionEvaluations int
 	MaxRuntime                 time.Duration
 	DisplayIterations          bool
 	DisplayFunctionEvaluations bool
@@ -35,8 +35,8 @@ type CommonSettings struct {
 
 func NewCommonSettings() *CommonSettings {
 	return &CommonSettings{
-		MaxIterations:              math.MaxInt32 - 1,
-		MaxFunctionEvaluations:     math.MaxInt32 - 1,
+		MaximumIterations:          math.MaxInt32 - 1,
+		MaximumFunctionEvaluations: math.MaxInt32 - 1,
 		MaxRuntime:                 time.Duration(math.MaxInt64 - 1),
 		DisplayIterations:          true,
 		DisplayFunctionEvaluations: true,
@@ -55,8 +55,8 @@ func NewOptCommon() *OptCommon {
 }
 
 func (c *OptCommon) SetSettings(s *CommonSettings) {
-	c.iter.SetMax(s.MaxIterations)
-	c.funEvals.SetMax(s.MaxFunctionEvaluations)
+	c.iter.SetMax(s.MaximumIterations)
+	c.funEvals.SetMax(s.MaximumFunctionEvaluations)
 	c.time.SetMax(s.MaxRuntime)
 	c.iter.SetDisp(s.DisplayIterations)
 	c.funEvals.SetDisp(s.DisplayFunctionEvaluations)

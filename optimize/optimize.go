@@ -87,9 +87,11 @@ func OptimizeOpter(o Optimizer, fun interface{}) (convergence.Type, error) {
 
 		// If the optimizer has not converged, take an iteration
 		// in the optimizer
-		nFunEvals, err := o.Iterate()
+		err := o.Iterate()
 		common.Iter().Add(1)
-		common.FunEvals().Add(nFunEvals)
+
+		// Function evaluations and history dealt with locally
+
 		if err != nil {
 			return nil, errors.New("opt: Error during optimizer iteration, " + err.Error())
 		}

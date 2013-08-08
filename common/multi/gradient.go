@@ -60,7 +60,7 @@ func (g *Gradient) Initialize() error {
 //}
 
 // Converged tests if either the absolute norm or the relative norm have converged
-func (g *Gradient) Converged() convergence.C {
+func (g *Gradient) Converged() convergence.Type {
 	// Test absolute convergence
 	c := g.Abs.CheckConvergence(g.norm)
 	if c != nil {

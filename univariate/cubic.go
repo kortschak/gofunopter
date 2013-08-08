@@ -44,6 +44,10 @@ func NewCubic() *Cubic {
 	}
 }
 
+func (c *Cubic) Step() *uni.BoundedStep {
+	return c.step
+}
+
 func (c *Cubic) Initialize(loc *uni.Location, obj *uni.Objective, grad *uni.Gradient) (err error) {
 
 	//if c.step.Init() == math.NaN() {
@@ -77,10 +81,7 @@ func (c *Cubic) SetResult() {
 	optimize.SetResult(c.step)
 }
 
-func (cubic *Cubic) Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gradient, fun UniGradFun) (nFunEvals int, err error) {
-	// This will always do one function evaluation per loop
-	nFunEvals = 1
-
+func (cubic *Cubic) Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gradient, fun UniGradFun) (err error) {
 	// Initialize
 	var stepMultiplier float64
 	updateCurrPoint := false
@@ -103,28 +104,26 @@ func (cubic *Cubic) Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gra
 	*/
 	trialF, trialG, err := fun.Eval(trialX)
 	if err != nil {
-		return nFunEvals, errors.New("gofunopter: cubic: user defined function error: " + err.Error())
+		return errors.New("gofunopter: cubic: user defined function error: " + err.Error())
 	}
 
 	var newStepSize float64
 
-	loc.AddToHist(trialX)
-	obj.AddToHist(trialF)
-	grad.AddToHist(trialG)
-
-	fmt.Println()
-	fmt.Println("curr step size", cubic.step.Curr())
-	fmt.Println("LB", cubic.step.Lb())
-	fmt.Println("UB", cubic.step.Ub())
-	fmt.Println("initX", loc.Init())
-	fmt.Println("currX", loc.Curr())
-	fmt.Println("trialX ", trialX)
-	fmt.Println("InitF \t", obj.Init())
-	fmt.Println("currF \t", currF)
-	fmt.Println("trialF \t", trialF)
-	fmt.Println("InitG", grad.Init())
-	fmt.Println("currG", currG)
-	fmt.Println("trialG", trialG)
+	/*
+		fmt.Println()
+		fmt.Println("curr step size", cubic.step.Curr())
+		fmt.Println("LB", cubic.step.Lb())
+		fmt.Println("UB", cubic.step.Ub())
+		fmt.Println("initX", loc.Init())
+		fmt.Println("currX", loc.Curr())
+		fmt.Println("trialX ", trialX)
+		fmt.Println("InitF \t", obj.Init())
+		fmt.Println("currF \t", currF)
+		fmt.Println("trialF \t", trialF)
+		fmt.Println("InitG", grad.Init())
+		fmt.Println("currG", currG)
+		fmt.Println("trialG", trialG)
+	*/
 
 	absTrialG := math.Abs(trialG)
 
@@ -331,7 +330,7 @@ func (cubic *Cubic) Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gra
 		}
 	}
 	cubic.step.SetCurr(newStepSize)
-	return nFunEvals, nil
+	return nil
 }
 
 func (c *Cubic) unclearStepIncrease(currLoc float64) float64 {
