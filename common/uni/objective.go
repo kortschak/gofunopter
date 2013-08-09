@@ -1,7 +1,7 @@
 package uni
 
 import (
-	"github.com/btracey/gofunopter/convergence"
+	"github.com/btracey/gofunopter/common/convergence"
 	"math"
 )
 

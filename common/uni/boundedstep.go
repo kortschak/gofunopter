@@ -2,8 +2,8 @@ package uni
 
 import (
 	"errors"
-	"github.com/btracey/gofunopter/convergence"
-	"github.com/btracey/gofunopter/display"
+	"github.com/btracey/gofunopter/common/convergence"
+	"github.com/btracey/gofunopter/common/display"
 	"math"
 )
 
