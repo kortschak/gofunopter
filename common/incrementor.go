@@ -1,8 +1,8 @@
 package common
 
 import (
-	"github.com/btracey/gofunopter/convergence"
-	"github.com/btracey/gofunopter/display"
+	"github.com/btracey/gofunopter/common/convergence"
+	"github.com/btracey/gofunopter/common/display"
 )
 
 // A Incrementor is a type for incrementing a value. Has methods for testing

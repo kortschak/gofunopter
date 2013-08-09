@@ -4,8 +4,8 @@
 package common
 
 import (
-	"github.com/btracey/gofunopter/convergence"
-	"github.com/btracey/gofunopter/display"
+	"github.com/btracey/gofunopter/common/convergence"
+	"github.com/btracey/gofunopter/common/display"
 	"math"
 	"time"
 )
@@ -14,120 +14,104 @@ import (
 // It includes a type to monitor the iterations, a type to
 // monitor the function evaluations, and a type to monitor the runtime
 type OptCommon struct {
-	iter     *Iterations
-	funEvals *FunctionEvaluations
-	time     *Time
+	Iter     *Iterations
+	FunEvals *FunctionEvaluations
+	Time     *Time
+	*display.Display
 }
 
 // CommonSettings is a list of settings for the OptCommon structure
+// See NewCommonSettings for a list of default values
 type CommonSettings struct {
-	// Add a comment
-	MaximumIterations          int
-	MaximumFunctionEvaluations int
-	MaxRuntime                 time.Duration
-	DisplayIterations          bool
-	DisplayFunctionEvaluations bool
-	DisplayRuntime             bool
-	// Add something about logging (rather than the current AddToHist)
+	*display.DisplaySettings
+	MaximumIterations          int           // Sets the maximum number of iterations that can occur
+	MaximumFunctionEvaluations int           // Sets the maximum number of function evaluations that can occur
+	MaxRuntime                 time.Duration // Sets the maximum runtime that can elapse
+	DisplayIterations          bool          // A toggle if the iteration number should display during the optimization
+	DisplayFunctionEvaluations bool          // A toggle if the function evaluations should display during the optimization
+	DisplayRuntime             bool          // A toggle if the runtime should display during the optimization
 }
 
+// NewCommonSettings creates the default common settings structure
 func NewCommonSettings() *CommonSettings {
 	return &CommonSettings{
-		MaximumIterations:          math.MaxInt32 - 1,
-		MaximumFunctionEvaluations: math.MaxInt32 - 1,
-		MaxRuntime:                 time.Duration(math.MaxInt64 - 1),
+		DisplaySettings:            display.NewDisplaySettings(),
+		MaximumIterations:          math.MaxInt32 - 1,                // Defaults to no maximum iterations
+		MaximumFunctionEvaluations: math.MaxInt32 - 1,                // Defaults to no maximum function evaluations
+		MaxRuntime:                 time.Duration(math.MaxInt64 - 1), // Defaults to no maximum runtime
 		DisplayIterations:          true,
 		DisplayFunctionEvaluations: true,
 		DisplayRuntime:             false,
 	}
 }
 
+// NewOptCommon creates a new OptCommon structure. Should be called by optimization method
 func NewOptCommon() *OptCommon {
 	c := &OptCommon{
-		iter:     NewIterations(),
-		funEvals: NewFunctionEvaluations(),
-		time:     NewTime(),
-		disp:     true,
+		Iter:     NewIterations(),
+		FunEvals: NewFunctionEvaluations(),
+		Time:     NewTime(),
 	}
 	return c
 }
 
+// SetSettings takes the settings from CommonSettings and translates them
+// into the relevant data types
 func (c *OptCommon) SetSettings(s *CommonSettings) {
-	c.iter.SetMax(s.MaximumIterations)
-	c.funEvals.SetMax(s.MaximumFunctionEvaluations)
-	c.time.SetMax(s.MaxRuntime)
-	c.iter.SetDisp(s.DisplayIterations)
-	c.funEvals.SetDisp(s.DisplayFunctionEvaluations)
-	c.time.SetDisp(s.DisplayRuntime)
+	c.Iter.SetMax(s.MaximumIterations)
+	c.FunEvals.SetMax(s.MaximumFunctionEvaluations)
+	c.Time.SetMax(s.MaxRuntime)
+	c.Iter.SetDisp(s.DisplayIterations)
+	c.FunEvals.SetDisp(s.DisplayFunctionEvaluations)
+	c.Time.SetDisp(s.DisplayRuntime)
 }
 
+// CommonResult is a list of results from the common structure
 type CommonResult struct {
-	Iterations          int
-	FunctionEvaluations int
-	Runtime             time.Duration
+	Iterations          int           // Total number of iterations taken by the optimizer
+	FunctionEvaluations int           // Total number of function evaluations taken by the optimizer
+	Runtime             time.Duration // Total runtime elapsed during the optimization
 }
 
-// All the names have common because we don't want to
-
+// AddToDisplay adds the structures to the display
 func (c *OptCommon) AddToDisplay(d []*display.Struct) []*display.Struct {
 	//return append(d, &display.Struct{Value: c.curr, Heading: c.name})
 	// AddToDisplay can't change because it needs to satisfy displayer interface
-	d = c.iter.AddToDisplay(d)
-	d = c.funEvals.AddToDisplay(d)
-	d = c.time.AddToDisplay(d)
+	d = c.Iter.AddToDisplay(d)
+	d = c.FunEvals.AddToDisplay(d)
+	d = c.Time.AddToDisplay(d)
 	return d
 }
 
-// OptCommon is to allow optimizers to easily
+// GetOptCommon is to allow optimizers to easily
 // satisfy the Optimizer interface
 func (c *OptCommon) GetOptCommon() *OptCommon {
 	return c
 }
 
-// Converged checks if any of the elements of common have converged
+// CommonConverged checks if any of the elements of common have converged
 func (c *OptCommon) CommonConverged() convergence.Type {
-	return convergence.CheckConvergence(c.iter, c.funEvals, c.time)
+	return convergence.CheckConvergence(c.Iter, c.FunEvals, c.Time)
 }
 
-func (c *OptCommon) CommonDisp() bool {
-	return c.disp
-}
-
-func (c *OptCommon) SetCommonDisp(b bool) {
-	c.disp = b
-}
-
-// FunEvals is to allow access to the FunEvals struct
-func (c *OptCommon) FunEvals() *FunctionEvaluations {
-	return c.funEvals
-}
-
-// Iter is to allow access to the Iterations struct
-func (c *OptCommon) Iter() *Iterations {
-	return c.iter
-}
-
-func (c *OptCommon) Time() *Time {
-	return c.time
-}
-
-// Initialize the common structure at the start of a run.
+// CommonInitialize initializes the elements of the common structure at the start of a run.
 func (c *OptCommon) CommonInitialize() {
-	c.time.Initialize()
-	c.funEvals.Initialize()
-	c.iter.Initialize()
+	c.FunEvals.Initialize()
+	c.Iter.Initialize()
+	c.Time.Initialize()
 }
 
+// CommonResult sets the results from the
 func (c *OptCommon) CommonResult() *CommonResult {
 	//SetResults(c.iter, c.funEvals, c.runtime)
-	c.iter.SetResult()
-	c.funEvals.SetResult()
-	c.time.SetResult()
+	c.Iter.SetResult()
+	c.FunEvals.SetResult()
+	c.Time.SetResult()
 
 	return &CommonResult{
-		Iterations:          c.iter.Opt(),
-		FunctionEvaluations: c.funEvals.Opt(),
-		Runtime:             c.time.Opt(),
+		Iterations:          c.Iter.Opt(),
+		FunctionEvaluations: c.FunEvals.Opt(),
+		Runtime:             c.Time.Opt(),
 	}
 }
 
