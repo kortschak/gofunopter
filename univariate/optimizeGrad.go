@@ -46,6 +46,14 @@ type UniGradOptimizer interface {
 
 func OptimizeGrad(function optimize.UniObjGrad, initialLocation float64, settings *UniGradSettings, optimizer UniGradOptimizer) (optValue float64, optLocation float64, result *UniGradResult, err error) {
 
+	if settings == nil {
+		settings = NewUniGradSettings()
+	}
+
+	if optimizer == nil {
+		optimizer = NewCubic()
+	}
+
 	m := newUniGradStruct()
 
 	m.fun = newModdedFun(function, m.loc, m.obj, m.grad, m.FunEvals)

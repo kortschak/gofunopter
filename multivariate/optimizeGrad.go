@@ -47,6 +47,14 @@ type MultiGradOptimizer interface {
 
 func OptimizeGrad(function optimize.MultiObjGrad, initialLocation []float64, settings *MultiGradSettings, optimizer MultiGradOptimizer) (optValue float64, optLocation []float64, result *MultiGradResult, err error) {
 
+	if settings == nil {
+		settings = NewMultiGradSettings()
+	}
+
+	if optimizer == nil {
+		optimizer = NewLbfgs()
+	}
+
 	m := newMultiGradStruct()
 	//m.fun = function
 	m.fun = newModdedFun(function, m.loc, m.obj, m.grad, m.FunEvals)
