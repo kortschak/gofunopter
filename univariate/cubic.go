@@ -7,7 +7,7 @@ import (
 	"github.com/btracey/gofunopter/common/uni"
 	"math"
 
-	"fmt"
+	//"fmt"
 )
 
 // A cubic optimizer optimizes by making successive
@@ -58,11 +58,6 @@ func (c *Cubic) Initialize(loc *uni.Location, obj *uni.Objective, grad *uni.Grad
 	if err != nil {
 		return errors.New("cubic: error initializing: " + err.Error())
 	}
-
-	fmt.Println("In cubic initialize")
-	fmt.Printf("loc %#v \n", loc)
-	fmt.Printf("obj %#v \n", obj)
-	fmt.Printf("grad %#v \n", grad)
 
 	// Initialize the rest of the memory
 	c.prevF = obj.Init()
