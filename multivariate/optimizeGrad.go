@@ -11,6 +11,8 @@ import (
 
 	"errors"
 	"math"
+
+	//"fmt"
 )
 
 type moddedFun struct {
@@ -136,6 +138,7 @@ func (m *multiGradStruct) Converged() convergence.Type {
 }
 
 func (m *multiGradStruct) AddToDisplay(d []*display.Struct) []*display.Struct {
+	//fmt.Println("In multi add to display")
 	return display.AddToDisplay(d, m.loc, m.obj, m.grad)
 }
 

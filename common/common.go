@@ -59,6 +59,8 @@ func NewOptCommon() *OptCommon {
 // SetSettings takes the settings from CommonSettings and translates them
 // into the relevant data types
 func (c *OptCommon) SetSettings(s *CommonSettings) {
+
+	c.Display.SetSettings(s.DisplaySettings)
 	c.Iter.SetMax(s.MaximumIterations)
 	c.FunEvals.SetMax(s.MaximumFunctionEvaluations)
 	c.Time.SetMax(s.MaxRuntime)

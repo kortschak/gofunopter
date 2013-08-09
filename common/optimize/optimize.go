@@ -4,7 +4,6 @@ package optimize
 
 import (
 	"errors"
-	//"fmt"
 	"github.com/btracey/gofunopter/common"
 	"github.com/btracey/gofunopter/common/convergence"
 	"github.com/btracey/gofunopter/common/display"
