@@ -1,7 +1,7 @@
 package multivariate
 
 import (
-	"github.com/btracey/gofunopter/convergence"
+	"github.com/btracey/gofunopter/common/convergence"
 	//"github.com/btracey/gofunopter/optimize"
 
 	"github.com/gonum/floats"

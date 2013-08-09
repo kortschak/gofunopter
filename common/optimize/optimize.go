@@ -15,13 +15,8 @@ type Optimizer interface {
 	//SetResulter
 	convergence.Converger
 	display.Displayer
-	Disp() bool
-	SetDisp(bool)
 	Iterate() error
 	GetOptCommon() *common.OptCommon
-	GetDisplay() *display.Display
-	FunEvals() *common.FunctionEvaluations
-	Iter() *common.Iterations
 	SetSettings() error
 	CommonSettings() *common.CommonSettings
 	SetResult(*common.CommonResult)
@@ -57,7 +52,7 @@ func OptimizeOpter(o Optimizer, fun interface{}) (convergence.Type, error) {
 	}
 
 	// Get the displayer
-	optDisplay := o.GetDisplay()
+	optDisplay := common.Display
 
 	// Defer call to set result
 	// Want to return the result even if there is an error (don't want to waste function
@@ -124,7 +119,7 @@ func OptimizeOpter(o Optimizer, fun interface{}) (convergence.Type, error) {
 
 func DisplayOpter(optDisplay *display.Display, o Optimizer, common, displayer display.Displayer, isDisplayer bool) {
 	// Display the outputs (if toggle is on)
-	if o.Disp() {
+	if optDisplay.Disp {
 		if isDisplayer {
 			optDisplay.DisplayProgress(common, o, displayer)
 		} else {

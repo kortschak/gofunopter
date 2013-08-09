@@ -2,8 +2,8 @@ package multivariate
 
 import (
 	"github.com/btracey/gofunopter/common/multi"
+	"github.com/btracey/gofunopter/common/optimize"
 	"github.com/btracey/gofunopter/common/uni"
-	"github.com/btracey/gofunopter/optimize"
 	"github.com/btracey/gofunopter/univariate"
 
 	"errors"

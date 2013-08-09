@@ -1,7 +1,7 @@
 package univariate
 
 import (
-	"github.com/btracey/gofunopter/convergence"
+	"github.com/btracey/gofunopter/common/convergence"
 
 	"fmt"
 	"math"
@@ -34,7 +34,7 @@ func SisoGradBasedTest(t *testing.T, opter UniGradOptimizer) {
 
 		settings := NewUniGradSettings()
 		settings.GradientAbsoluteTolerance = 1e-14
-		settings.MaxIterations = 50
+		settings.MaximumIterations = 50
 
 		fmt.Println("Init loc", fun.InitLoc)
 		fmt.Println("Settings", settings)

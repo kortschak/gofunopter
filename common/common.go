@@ -51,6 +51,7 @@ func NewOptCommon() *OptCommon {
 		Iter:     NewIterations(),
 		FunEvals: NewFunctionEvaluations(),
 		Time:     NewTime(),
+		Display:  display.NewDisplay(),
 	}
 	return c
 }

@@ -3,10 +3,10 @@ package univariate
 import (
 	"github.com/btracey/gofunopter/common"
 	//"github.com/btracey/gofunopter/common/multi"
+	"github.com/btracey/gofunopter/common/convergence"
+	"github.com/btracey/gofunopter/common/display"
+	"github.com/btracey/gofunopter/common/optimize"
 	"github.com/btracey/gofunopter/common/uni"
-	"github.com/btracey/gofunopter/convergence"
-	"github.com/btracey/gofunopter/display"
-	"github.com/btracey/gofunopter/optimize"
 
 	"errors"
 	"math"
@@ -52,7 +52,7 @@ func OptimizeGrad(function UniGradFun, initialLocation float64, settings *UniGra
 
 	m := newUniGradStruct()
 
-	m.fun = newModdedFun(function, m.loc, m.obj, m.grad, m.FunEvals())
+	m.fun = newModdedFun(function, m.loc, m.obj, m.grad, m.FunEvals)
 	m.settings = settings
 	m.optimizer = optimizer
 
@@ -72,7 +72,6 @@ type UniGradSettings struct {
 	InitialObjective          float64
 	InitialGradient           float64
 	GradientAbsoluteTolerance float64
-	Display                   bool
 }
 
 func NewUniGradSettings() *UniGradSettings {
@@ -81,14 +80,11 @@ func NewUniGradSettings() *UniGradSettings {
 		InitialObjective:          math.NaN(),
 		InitialGradient:           math.NaN(),
 		GradientAbsoluteTolerance: 1e-6,
-		Display:                   true,
 	}
 }
 
 type uniGradStruct struct {
 	*common.OptCommon
-	*display.Display
-	disp bool
 
 	loc  *uni.Location
 	obj  *uni.Objective
@@ -110,8 +106,6 @@ type uniGradStruct struct {
 func newUniGradStruct() *uniGradStruct {
 	m := &uniGradStruct{
 		OptCommon: common.NewOptCommon(),
-		Display:   display.NewDisplay(),
-		disp:      true,
 		loc:       uni.NewLocation(),
 		obj:       uni.NewObjective(),
 		grad:      uni.NewGradient(),
@@ -128,17 +122,8 @@ func (m *uniGradStruct) CommonSettings() *common.CommonSettings {
 func (m *uniGradStruct) SetSettings() error {
 	m.grad.SetInit(m.settings.InitialGradient)
 	m.obj.SetInit(m.settings.InitialObjective)
-	m.disp = m.settings.Display
 	m.grad.SetAbsTol(m.settings.GradientAbsoluteTolerance)
 	return nil
-}
-
-func (m *uniGradStruct) Disp() bool {
-	return m.disp
-}
-
-func (m *uniGradStruct) SetDisp(b bool) {
-	m.disp = b
 }
 
 func (m *uniGradStruct) Converged() convergence.Type {
@@ -146,9 +131,7 @@ func (m *uniGradStruct) Converged() convergence.Type {
 }
 
 func (m *uniGradStruct) AddToDisplay(d []*display.Struct) []*display.Struct {
-	if m.disp {
-		d = display.AddToDisplay(d, m.loc, m.obj, m.grad)
-	}
+	d = display.AddToDisplay(d, m.loc, m.obj, m.grad)
 	return d
 }
 

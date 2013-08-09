@@ -2,9 +2,9 @@ package univariate
 
 import (
 	"errors"
+	"github.com/btracey/gofunopter/common/convergence"
+	"github.com/btracey/gofunopter/common/optimize"
 	"github.com/btracey/gofunopter/common/uni"
-	"github.com/btracey/gofunopter/convergence"
-	"github.com/btracey/gofunopter/optimize"
 	"math"
 
 	"fmt"

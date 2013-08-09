@@ -27,20 +27,20 @@ func AddToDisplay(d []*Struct, disper ...Displayer) []*Struct {
 
 type Display struct {
 	structs            []*Struct
-	disp               bool
+	Disp               bool
 	headings           []string
 	values             []string
 	maxLengths         []int
-	headingInterval    int
-	valueInterval      time.Duration
+	HeadingInterval    int
+	ValueInterval      time.Duration
 	lastHeadingDisplay int // How many times have values been displayed since the last heading display
 	lastValueDisplay   time.Time
 }
 
 func (d *Display) SetSettings(disp *DisplaySettings) {
-	d.headingInterval = disp.DisplayHeadingInterval
-	d.valueInterval = disp.DisplayValueInterval
-	d.disp = disp.Display
+	d.HeadingInterval = disp.DisplayHeadingInterval
+	d.ValueInterval = disp.DisplayValueInterval
+	d.Disp = disp.Display
 }
 
 func NewDisplay() *Display {
@@ -69,32 +69,8 @@ func (o *Display) Reset() {
 	o.lastValueDisplay = time.Time{}
 }
 
-func (o *Display) SetValueDisplayInterval(d time.Duration) {
-	o.valueInterval = d
-}
-
-func (o *Display) SetHeadingDisplayInterval(i int) {
-	o.headingInterval = i
-}
-
 func (o *Display) IncreaseValueTime() {
 	o.lastValueDisplay = time.Time{} //reset to zero time
-}
-
-// OptDisplay is so the optimizer implements Optimizer by
-// embedding OptDisplay
-func (o *Display) GetDisplay() *Display {
-	return o
-}
-
-// Disp returns the toggle for the display of the whole optimizer
-func (o *Display) Disp() bool {
-	return o.disp
-}
-
-// SetDisp returns the toggle for the display of the whole optimizer
-func (o *Display) SetDisp(b bool) {
-	o.disp = b
 }
 
 // Note: This would ideally take in common.Common, but common imports display
@@ -103,9 +79,9 @@ func (o *Display) SetDisp(b bool) {
 
 func (o *Display) DisplayProgress(displayers ...Displayer) {
 	// If the display is off, don't do anything
-	if o.disp {
+	if o.Disp {
 		// Check that it's been long enough to display values
-		if time.Since(o.lastValueDisplay) > o.valueInterval {
+		if time.Since(o.lastValueDisplay) > o.ValueInterval {
 			o.structs = o.structs[:0]
 			// Collect all the values and headings to be displayed
 			for _, displayer := range displayers {
@@ -135,7 +111,7 @@ func (o *Display) DisplayProgress(displayers ...Displayer) {
 			}
 
 			// Print the values
-			if o.lastHeadingDisplay > o.headingInterval {
+			if o.lastHeadingDisplay > o.HeadingInterval {
 				for _, val := range o.headings {
 					fmt.Printf(val)
 					fmt.Printf("\t")

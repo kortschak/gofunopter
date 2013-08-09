@@ -5,8 +5,8 @@ import (
 	"github.com/gonum/floats"
 
 	//"gofunopter/common"
+	"github.com/btracey/gofunopter/common/convergence"
 	"github.com/btracey/gofunopter/common/uni"
-	"github.com/btracey/gofunopter/convergence"
 	//"github.com/btracey/gofunopter/optimize"
 	"github.com/btracey/gofunopter/univariate"
 
