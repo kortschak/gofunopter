@@ -112,6 +112,7 @@ func (o *Display) DisplayProgress(displayers ...Displayer) {
 
 			// Print the values
 			if o.lastHeadingDisplay > o.HeadingInterval {
+				fmt.Printf("\n")
 				for _, val := range o.headings {
 					fmt.Printf(val)
 					fmt.Printf("\t")
