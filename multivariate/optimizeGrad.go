@@ -14,14 +14,14 @@ import (
 )
 
 type moddedFun struct {
-	fun      MultiGradFun
+	fun      optimize.MultiObjGrad
 	loc      *multi.Location
 	obj      *uni.Objective
 	grad     *multi.Gradient
 	funEvals *common.FunctionEvaluations
 }
 
-func newModdedFun(fun MultiGradFun, loc *multi.Location, obj *uni.Objective, grad *multi.Gradient, funEvals *common.FunctionEvaluations) *moddedFun {
+func newModdedFun(fun optimize.MultiObjGrad, loc *multi.Location, obj *uni.Objective, grad *multi.Gradient, funEvals *common.FunctionEvaluations) *moddedFun {
 	return &moddedFun{
 		fun:      fun,
 		loc:      loc,
@@ -31,8 +31,8 @@ func newModdedFun(fun MultiGradFun, loc *multi.Location, obj *uni.Objective, gra
 	}
 }
 
-func (m *moddedFun) Eval(x []float64) (obj float64, grad []float64, err error) {
-	obj, grad, err = m.fun.Eval(x)
+func (m *moddedFun) ObjGrad(x []float64) (obj float64, grad []float64, err error) {
+	obj, grad, err = m.fun.ObjGrad(x)
 	m.loc.AddToHist(x)
 	m.obj.AddToHist(obj)
 	m.grad.AddToHist(grad)
@@ -40,16 +40,12 @@ func (m *moddedFun) Eval(x []float64) (obj float64, grad []float64, err error) {
 	return
 }
 
-type MultiGradFun interface {
-	Eval(x []float64) (obj float64, grad []float64, err error)
-}
-
 type MultiGradOptimizer interface {
 	Initialize(loc *multi.Location, obj *uni.Objective, grad *multi.Gradient) error
-	Iterate(loc *multi.Location, obj *uni.Objective, grad *multi.Gradient, fun MultiGradFun) error
+	Iterate(loc *multi.Location, obj *uni.Objective, grad *multi.Gradient, fun optimize.MultiObjGrad) error
 }
 
-func OptimizeGrad(function MultiGradFun, initialLocation []float64, settings *MultiGradSettings, optimizer MultiGradOptimizer) (optValue float64, optLocation []float64, result *MultiGradResult, err error) {
+func OptimizeGrad(function optimize.MultiObjGrad, initialLocation []float64, settings *MultiGradSettings, optimizer MultiGradOptimizer) (optValue float64, optLocation []float64, result *MultiGradResult, err error) {
 
 	m := newMultiGradStruct()
 	//m.fun = function
@@ -92,7 +88,7 @@ type multiGradStruct struct {
 	grad *multi.Gradient
 
 	// User defined function
-	fun MultiGradFun
+	fun optimize.MultiObjGrad
 
 	// Optimization model
 	optimizer MultiGradOptimizer
@@ -156,7 +152,7 @@ func (m *multiGradStruct) Initialize() error {
 			return errors.New("initial function value and gradient must either both be set or neither set")
 		}
 		// Both nan, so compute the initial fuction value and gradient
-		initObj, initGrad, err := m.fun.Eval(initLoc)
+		initObj, initGrad, err := m.fun.ObjGrad(initLoc)
 		if err != nil {
 			return errors.New("error calling function during optimization: \n" + err.Error())
 		}

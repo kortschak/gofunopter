@@ -98,7 +98,7 @@ func (lbfgs *Lbfgs) Initialize(loc *multi.Location, obj *uni.Objective, grad *mu
 	return nil
 }
 
-func (lbfgs *Lbfgs) Iterate(loc *multi.Location, obj *uni.Objective, grad *multi.Gradient, fun MultiGradFun) error {
+func (lbfgs *Lbfgs) Iterate(loc *multi.Location, obj *uni.Objective, grad *multi.Gradient, fun optimize.MultiObjGrad) error {
 	counter := lbfgs.counter
 	q := lbfgs.q
 	a := lbfgs.a

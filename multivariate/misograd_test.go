@@ -2,7 +2,7 @@ package multivariate
 
 import (
 	"github.com/btracey/gofunopter/common/convergence"
-	//"github.com/btracey/gofunopter/optimize"
+	"github.com/btracey/gofunopter/common/optimize"
 
 	"github.com/gonum/floats"
 	"math"
@@ -19,7 +19,7 @@ type Rosenbrock struct {
 	nDim int
 }
 
-func (r *Rosenbrock) Eval(x []float64) (sum float64, deriv []float64, err error) {
+func (r *Rosenbrock) ObjGrad(x []float64) (sum float64, deriv []float64, err error) {
 	sum = 0
 	deriv = make([]float64, len(x))
 	for i := 0; i < len(x)-1; i++ {
@@ -46,7 +46,7 @@ func (r *Rosenbrock) OptLoc() []float64 {
 }
 
 type MisoGradTestFunction interface {
-	MultiGradFun
+	optimize.MultiObjGrad
 	OptVal() float64
 	OptLoc() []float64
 }

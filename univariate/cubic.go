@@ -81,7 +81,7 @@ func (c *Cubic) SetResult() {
 	optimize.SetResult(c.step)
 }
 
-func (cubic *Cubic) Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gradient, fun UniGradFun) (err error) {
+func (cubic *Cubic) Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gradient, fun optimize.UniObjGrad) (err error) {
 	// Initialize
 	var stepMultiplier float64
 	updateCurrPoint := false
@@ -102,7 +102,7 @@ func (cubic *Cubic) Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gra
 		fmt.Println(trialX, "trialX")
 		fmt.Println("cubic current step", cubic.step.Curr())
 	*/
-	trialF, trialG, err := fun.Eval(trialX)
+	trialF, trialG, err := fun.ObjGrad(trialX)
 	if err != nil {
 		return errors.New("gofunopter: cubic: user defined function error: " + err.Error())
 	}

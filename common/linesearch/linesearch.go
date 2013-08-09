@@ -6,17 +6,12 @@ import (
 
 	//"gofunopter/common"
 	"github.com/btracey/gofunopter/common/convergence"
+	"github.com/btracey/gofunopter/common/optimize"
 	"github.com/btracey/gofunopter/common/uni"
-	//"github.com/btracey/gofunopter/optimize"
 	"github.com/btracey/gofunopter/univariate"
 
 	"fmt"
 )
-
-// MultiGradFun is a copy from multivariate to avoid the circular import
-type MultiGradFun interface {
-	Eval(x []float64) (obj float64, grad []float64, err error)
-}
 
 // Result is a struct for returning the result from a linesearch
 type LinesearchResult struct {
@@ -30,7 +25,7 @@ type LinesearchResult struct {
 // LinesearchFun is a type which is the one-dimensional funciton that projects
 // the multidimensional function onto the line
 type linesearchFun struct {
-	fun         MultiGradFun
+	fun         optimize.MultiObjGrad
 	wolfe       WolfeConditioner
 	direction   []float64 // unit vector
 	initLoc     []float64
@@ -39,14 +34,14 @@ type linesearchFun struct {
 	currGrad    []float64
 }
 
-func (l *linesearchFun) Eval(step float64) (f float64, g float64, err error) {
+func (l *linesearchFun) ObjGrad(step float64) (f float64, g float64, err error) {
 	// Take the step (need to add back in the scaling)
 	for i, val := range l.direction {
 		l.currLoc[i] = val*step + l.initLoc[i]
 	}
 	// Copy the location (in case the user-defined function modifies it)
 	copy(l.currLocCopy, l.currLoc)
-	f, gVec, err := l.fun.Eval(l.currLocCopy)
+	f, gVec, err := l.fun.ObjGrad(l.currLocCopy)
 	if err != nil {
 		return f, g, errors.New("linesearch: error during user defined function")
 	}
@@ -74,7 +69,7 @@ type LinesearchMethod interface {
 }
 
 // Linesearch performs a linesearch. Optimizer should turn off all non-wolfe convergence patterns for the gradient and step
-func Linesearch(multifun MultiGradFun, method LinesearchMethod, settings *univariate.UniGradSettings, wolfe WolfeConditioner, searchVector []float64, initLoc []float64, initObj float64, initGrad []float64) (*LinesearchResult, error) {
+func Linesearch(multifun optimize.MultiObjGrad, method LinesearchMethod, settings *univariate.UniGradSettings, wolfe WolfeConditioner, searchVector []float64, initLoc []float64, initObj float64, initGrad []float64) (*LinesearchResult, error) {
 
 	// Linesearch modifies the values of the slices, but should revert the changes by the end
 

@@ -13,14 +13,14 @@ import (
 )
 
 type moddedFun struct {
-	uni      UniGradFun
+	uni      optimize.UniObjGrad
 	loc      *uni.Location
 	obj      *uni.Objective
 	grad     *uni.Gradient
 	funEvals *common.FunctionEvaluations
 }
 
-func newModdedFun(fun UniGradFun, loc *uni.Location, obj *uni.Objective, grad *uni.Gradient, funEvals *common.FunctionEvaluations) *moddedFun {
+func newModdedFun(fun optimize.UniObjGrad, loc *uni.Location, obj *uni.Objective, grad *uni.Gradient, funEvals *common.FunctionEvaluations) *moddedFun {
 	return &moddedFun{
 		uni:      fun,
 		loc:      loc,
@@ -30,8 +30,8 @@ func newModdedFun(fun UniGradFun, loc *uni.Location, obj *uni.Objective, grad *u
 	}
 }
 
-func (m *moddedFun) Eval(x float64) (obj float64, grad float64, err error) {
-	obj, grad, err = m.uni.Eval(x)
+func (m *moddedFun) ObjGrad(x float64) (obj float64, grad float64, err error) {
+	obj, grad, err = m.uni.ObjGrad(x)
 	m.loc.AddToHist(x)
 	m.obj.AddToHist(obj)
 	m.grad.AddToHist(grad)
@@ -39,16 +39,12 @@ func (m *moddedFun) Eval(x float64) (obj float64, grad float64, err error) {
 	return
 }
 
-type UniGradFun interface {
-	Eval(x float64) (obj float64, grad float64, err error)
-}
-
 type UniGradOptimizer interface {
 	Initialize(loc *uni.Location, obj *uni.Objective, grad *uni.Gradient) error
-	Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gradient, fun UniGradFun) (err error)
+	Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gradient, fun optimize.UniObjGrad) (err error)
 }
 
-func OptimizeGrad(function UniGradFun, initialLocation float64, settings *UniGradSettings, optimizer UniGradOptimizer) (optValue float64, optLocation float64, result *UniGradResult, err error) {
+func OptimizeGrad(function optimize.UniObjGrad, initialLocation float64, settings *UniGradSettings, optimizer UniGradOptimizer) (optValue float64, optLocation float64, result *UniGradResult, err error) {
 
 	m := newUniGradStruct()
 
@@ -91,7 +87,7 @@ type uniGradStruct struct {
 	grad *uni.Gradient
 
 	// User defined function
-	fun UniGradFun
+	fun optimize.UniObjGrad
 
 	// Optimization model
 	optimizer UniGradOptimizer
@@ -156,7 +152,7 @@ func (u *uniGradStruct) Initialize() error {
 			return errors.New("gofunopter: cubic: initial function value and gradient must either both be set or neither set")
 		}
 		// Both nan, so compute the initial fuction value and gradient
-		initObj, initGrad, err := u.fun.Eval(initLoc)
+		initObj, initGrad, err := u.fun.ObjGrad(initLoc)
 		if err != nil {
 			return errors.New("gofunopter: cubic: error calling function during optimization")
 		}

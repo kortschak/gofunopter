@@ -1,36 +1,25 @@
 package optimize
 
-/*
-
-// This is in its own package because otherwise it's hard to avoid circular imports
-
-// Siso is an interface for a function input of a
-//gradient-free unconstrained optimizer
-type Siso interface {
-	Eval(x float64) (f float64)
+type UniObj interface {
+	Objective(x float64) (obj float64, err error)
 }
 
-// SisoGrad is an interface for a function which is single
-// input single output and has gradient information
-type SisoGrad interface {
-	Eval(x float64) (f, g float64, err error)
+type UniGrad interface {
+	Gradient(x float64) (obj float64, err error)
 }
 
-/*
-// SisoGradIndividual is an interface for a function which
-// is a SisoGrad, but the function and the gradient can be
-// called separately
-type SisoGradIndividual interface {
-	SisoGrad
-	Function(x float64) (f float64)
-	Gradient(x float64) (g float64)
+type UniObjGrad interface {
+	ObjGrad(x float64) (obj float64, grad float64, err error)
 }
 
-type Miso interface {
-	Eval(x []float64) (f float64)
+type MultiObj interface {
+	Objective(x []float64) (obj float64, err error)
 }
 
-type MisoGrad interface {
-	Eval(x []float64) (f float64, g []float64, err error)
+type MultiGrad interface {
+	Gradient(x []float64) (grad []float64, err error)
 }
-*/
+
+type MultiObjGrad interface {
+	ObjGrad(x []float64) (obj float64, grad []float64, err error)
+}

@@ -2,6 +2,7 @@ package univariate
 
 import (
 	"github.com/btracey/gofunopter/common/convergence"
+	"github.com/btracey/gofunopter/common/optimize"
 
 	"fmt"
 	"math"
@@ -11,7 +12,7 @@ import (
 var SISO_TOLERANCE float64 = 1E-6
 
 type SisoGradTestFunction interface {
-	UniGradFun
+	optimize.UniObjGrad
 	Name() string
 	OptVal() float64
 	OptLoc() float64
@@ -102,7 +103,7 @@ var _ = fmt.Println
 
 type SumExpStruct struct{}
 
-func (s SumExpStruct) Eval(x float64) (f, g float64, err error) {
+func (s SumExpStruct) ObjGrad(x float64) (f, g float64, err error) {
 
 	// http://www.wolframalpha.com/input/?i=0.3+*+exp%28+-+3+%28x-1%29%29+%2B+exp%28x-1%29
 	c1 := 0.3
