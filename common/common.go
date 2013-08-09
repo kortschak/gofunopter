@@ -11,26 +11,24 @@ import (
 )
 
 // OptCommon defines a structure common to all optimizers
-// All optimizers should embed OptCommon
-// MaxIter is the maximum number of allowable iterations.
-// MaxRuntime is the maximum runtime of the optimizer
-// MaxFunEvals is the maximum allowable number of function calls
-// (enforced on a per-iteration) basis, so may go over this limit
-// depending on the optimizer used
+// It includes a type to monitor the iterations, a type to
+// monitor the function evaluations, and a type to monitor the runtime
 type OptCommon struct {
 	iter     *Iterations
 	funEvals *FunctionEvaluations
 	time     *Time
-	disp     bool
 }
 
+// CommonSettings is a list of settings for the OptCommon structure
 type CommonSettings struct {
+	// Add a comment
 	MaximumIterations          int
 	MaximumFunctionEvaluations int
 	MaxRuntime                 time.Duration
 	DisplayIterations          bool
 	DisplayFunctionEvaluations bool
 	DisplayRuntime             bool
+	// Add something about logging (rather than the current AddToHist)
 }
 
 func NewCommonSettings() *CommonSettings {
@@ -40,7 +38,7 @@ func NewCommonSettings() *CommonSettings {
 		MaxRuntime:                 time.Duration(math.MaxInt64 - 1),
 		DisplayIterations:          true,
 		DisplayFunctionEvaluations: true,
-		DisplayRuntime:             true,
+		DisplayRuntime:             false,
 	}
 }
 
