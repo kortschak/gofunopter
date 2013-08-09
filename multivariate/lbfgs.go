@@ -1,6 +1,7 @@
 package multivariate
 
 import (
+	"github.com/btracey/gofunopter/common/linesearch"
 	"github.com/btracey/gofunopter/common/multi"
 	"github.com/btracey/gofunopter/common/optimize"
 	"github.com/btracey/gofunopter/common/uni"
@@ -16,10 +17,10 @@ type Lbfgs struct {
 	step *uni.BoundedStep
 
 	// Tunable Parameters
-	LinesearchMethod   LinesearchMethod
+	LinesearchMethod   linesearch.LinesearchMethod
 	LinesearchSettings *univariate.UniGradSettings
 	NumStore           int // How many gradients to store
-	Wolfe              WolfeConditioner
+	Wolfe              linesearch.WolfeConditioner
 
 	// Other needed variables
 	gamma_k float64
@@ -45,7 +46,7 @@ func NewLbfgs() *Lbfgs {
 		LinesearchMethod:   univariate.NewCubic(),
 		LinesearchSettings: univariate.NewUniGradSettings(),
 		NumStore:           30,
-		Wolfe:              &StrongWolfeConditions{},
+		Wolfe:              &linesearch.StrongWolfeConditions{},
 	}
 	l.Wolfe.SetFunConst(0)
 	l.Wolfe.SetGradConst(0.9)
@@ -156,7 +157,7 @@ func (lbfgs *Lbfgs) Iterate(loc *multi.Location, obj *uni.Objective, grad *multi
 	normP_k := floats.Norm(p_k, 2)
 
 	// Perform line search -- need to find some way to implement this, especially bookkeeping function values
-	linesearchResult, err := Linesearch(fun, lbfgs.LinesearchMethod, lbfgs.LinesearchSettings, lbfgs.Wolfe, p_k, loc.Curr(), obj.Curr(), grad.Curr())
+	linesearchResult, err := linesearch.Linesearch(fun, lbfgs.LinesearchMethod, lbfgs.LinesearchSettings, lbfgs.Wolfe, p_k, loc.Curr(), obj.Curr(), grad.Curr())
 
 	// In the future add a check to switch to a different linesearcher?
 	if err != nil {
