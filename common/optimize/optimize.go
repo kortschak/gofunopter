@@ -39,7 +39,7 @@ func OptimizeOpter(o Optimizer, fun interface{}) (convergence.Type, error) {
 	if ok {
 		err = initer.Initialize()
 		if err != nil {
-			return nil, errors.New("opt: errer during user defined function initialization")
+			return nil, errors.New("opt: error during user defined function initialization: " + err.Error())
 		}
 	}
 	common.CommonInitialize()
