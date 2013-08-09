@@ -1,7 +1,7 @@
 package multi
 
 import (
-	"github.com/btracey/gofunopter/convergence"
+	"github.com/btracey/gofunopter/common/convergence"
 	"github.com/gonum/floats"
 	"math"
 )

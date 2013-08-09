@@ -1,7 +1,7 @@
 package multi
 
 import (
-	"github.com/btracey/gofunopter/display"
+	"github.com/btracey/gofunopter/common/display"
 
 	"errors"
 	"github.com/gonum/floats"
