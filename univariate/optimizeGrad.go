@@ -67,16 +67,17 @@ func OptimizeGrad(function optimize.UniObjGrad, initialLocation float64, setting
 }
 
 type UniGradResult struct {
-	Status status.Status
 	*common.CommonResult
 	*uni.ObjectiveResult
 	*uni.GradientResult
+	*uni.LocationResult
 }
 
 type UniGradSettings struct {
 	*common.CommonSettings
 	*uni.GradientSettings
 	*uni.ObjectiveSettings
+	*uni.LocationSettings
 }
 
 func NewUniGradSettings() *UniGradSettings {
@@ -84,6 +85,7 @@ func NewUniGradSettings() *UniGradSettings {
 		CommonSettings:    common.NewCommonSettings(),
 		GradientSettings:  uni.NewGradientSettings(),
 		ObjectiveSettings: uni.NewObjectiveSettings(),
+		LocationSettings:  uni.NewLocationSettings(),
 	}
 }
 
@@ -126,6 +128,7 @@ func (m *uniGradStruct) CommonSettings() *common.CommonSettings {
 func (m *uniGradStruct) SetSettings() error {
 	m.obj.SetSettings(m.settings.ObjectiveSettings)
 	m.grad.SetSettings(m.settings.GradientSettings)
+	m.loc.SetSettings(m.settings.LocationSettings)
 	//m.grad.SetInit(m.settings.InitialGradient)
 	//m.obj.SetInit(m.settings.InitialObjective)
 	//m.grad.SetAbsTol(m.settings.GradientAbsoluteTolerance)
@@ -142,11 +145,13 @@ func (m *uniGradStruct) AddToDisplay(d []*display.Struct) []*display.Struct {
 }
 
 func (u *uniGradStruct) Result() *UniGradResult {
-	return &UniGradResult{
+	r := &UniGradResult{
 		CommonResult:    u.OptCommon.CommonResult(),
 		ObjectiveResult: u.obj.Result(),
 		GradientResult:  u.grad.Result(),
+		LocationResult:  u.loc.Result(),
 	}
+	return r
 }
 
 func (u *uniGradStruct) SetResult() {

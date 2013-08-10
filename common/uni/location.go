@@ -20,3 +20,32 @@ func NewLocation() *Location {
 func (l *Location) SetResult() {
 	l.Float.SetResult()
 }
+
+type LocationSettings struct {
+	DisplayLocation     bool
+	KeepLocationHistory bool
+}
+
+func NewLocationSettings() *LocationSettings {
+	return &LocationSettings{
+		DisplayLocation: false,
+	}
+}
+
+type LocationResult struct {
+	LocationHistory []float64
+	Location        float64
+}
+
+func (o *Location) SetSettings(s *LocationSettings) {
+	o.SetDisp(s.DisplayLocation)
+	o.SetSaveHist(s.KeepLocationHistory)
+}
+
+// SetResult sets the optimum value, and resets the initial value to NaN
+func (o *Location) Result() *LocationResult {
+	return &LocationResult{
+		LocationHistory: o.Float.Hist(),
+		Location:        o.Float.Opt(),
+	}
+}

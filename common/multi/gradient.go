@@ -38,6 +38,43 @@ func NewGradient() *Gradient {
 	return g
 }
 
+type GradientSettings struct {
+	InitialGradient           []float64
+	DisplayGradient           bool
+	GradientAbsoluteTolerance float64
+	GradientRelativeTolerance float64
+	KeepGradientHistory       bool
+}
+
+func NewGradientSettings() *GradientSettings {
+	return &GradientSettings{
+		InitialGradient:           nil,
+		DisplayGradient:           true,
+		GradientAbsoluteTolerance: status.DefaultGradAbsTol,
+	}
+}
+
+type GradientResult struct {
+	GradientHistory [][]float64
+	Gradient        []float64
+}
+
+func (o *Gradient) SetSettings(s *GradientSettings) {
+	o.SetInit(s.InitialGradient)
+	o.SetDisp(s.DisplayGradient)
+	o.SetRelTol(s.GradientRelativeTolerance)
+	o.SetAbsTol(s.GradientAbsoluteTolerance)
+	o.SetSaveHist(s.KeepGradientHistory)
+}
+
+// SetResult sets the optimum value, and resets the initial value to NaN
+func (o *Gradient) Result() *GradientResult {
+	return &GradientResult{
+		GradientHistory: o.Floats.Hist(),
+		Gradient:        o.Floats.Opt(),
+	}
+}
+
 // AddToDisplay adds the norm of the gradient
 func (g *Gradient) AddToDisplay(d []*display.Struct) []*display.Struct {
 	if g.disp {

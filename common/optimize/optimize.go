@@ -7,8 +7,6 @@ import (
 	"github.com/btracey/gofunopter/common"
 	"github.com/btracey/gofunopter/common/display"
 	"github.com/btracey/gofunopter/common/status"
-
-	"fmt"
 )
 
 type Optimizer interface {
@@ -21,6 +19,10 @@ type Optimizer interface {
 	SetSettings() error
 	CommonSettings() *common.CommonSettings
 	SetResult()
+}
+
+type statusHolder struct {
+	stat status.Status
 }
 
 // OptimizeOpter is the basic method for using optimizers. Not intended to
@@ -36,7 +38,7 @@ func OptimizeOpter(o Optimizer, fun interface{}) error {
 
 	o.SetSettings()
 
-	var s *status.Status
+	s := &statusHolder{}
 	var c status.Status
 	defer SetOptResults(o, common, fun, s)
 	// Initialize the caller's function if it is an initializer
@@ -45,7 +47,7 @@ func OptimizeOpter(o Optimizer, fun interface{}) error {
 		err = initer.Initialize()
 		if err != nil {
 			c = status.UserFunctionError
-			s = &c
+			s.stat = c
 			return errors.New("opt: error during user defined function initialization: " + err.Error())
 		}
 	}
@@ -55,7 +57,7 @@ func OptimizeOpter(o Optimizer, fun interface{}) error {
 	err = o.Initialize()
 	if err != nil {
 		c = status.UserFunctionError
-		s = &c
+		s.stat = c
 		return errors.New("opt: error during optimizer initialization, " + err.Error())
 	}
 
@@ -81,9 +83,7 @@ func OptimizeOpter(o Optimizer, fun interface{}) error {
 	for {
 		// Check if the optimizer has converged
 		c = o.Status()
-		fmt.Println(c)
-		s = &c
-		fmt.Println(s)
+		s.stat = c
 		if c != status.Continue {
 			break
 		}
@@ -98,7 +98,7 @@ func OptimizeOpter(o Optimizer, fun interface{}) error {
 
 		// Check if common has converged (iterations, funevals, etc.)
 		c = common.CommonStatus()
-		s = &c
+		s.stat = c
 		if c != status.Continue {
 			break
 		}
@@ -111,7 +111,7 @@ func OptimizeOpter(o Optimizer, fun interface{}) error {
 		// Optimizer will return an error and a status. Status should equal
 		// status.Continue unless there is an error
 		stat, err := o.Iterate()
-		s = &stat
+		s.stat = stat
 		common.Iter.Add(1)
 		if stat != status.Continue {
 			return err
@@ -137,9 +137,8 @@ func DisplayOpter(optDisplay *display.Display, o Optimizer, common, displayer di
 	}
 }
 
-func SetOptResults(o Optimizer, c *common.OptCommon, fun interface{}, s *status.Status) {
-	fmt.Println(s)
-	c.SetResult(*s)
+func SetOptResults(o Optimizer, c *common.OptCommon, fun interface{}, s *statusHolder) {
+	c.SetResult(s.stat)
 	o.SetResult()
 	setResulter, ok := fun.(SetResulter)
 	if ok {

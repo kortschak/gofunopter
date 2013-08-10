@@ -115,12 +115,13 @@ func (c *OptCommon) SetResult(s status.Status) {
 
 // CommonResult sets the results from the
 func (c *OptCommon) CommonResult() *CommonResult {
-	return &CommonResult{
+	r := &CommonResult{
 		Iterations:          c.Iter.Opt(),
 		FunctionEvaluations: c.FunEvals.Opt(),
 		Runtime:             c.Time.Opt(),
 		Status:              c.stat,
 	}
+	return r
 }
 
 type Iterations struct {

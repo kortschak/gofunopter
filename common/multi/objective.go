@@ -46,7 +46,6 @@ func NewObjective() *Objective {
 type ObjectiveSettings struct {
 	InitialObjective           []float64
 	DisplayObjective           bool
-	ObjectiveAbsoluteTolerance float64
 	ObjectiveRelativeTolerance float64
 	KeepObjectiveHistory       bool
 }
@@ -64,16 +63,14 @@ func (o *Objective) SetSettings(s *ObjectiveSettings) {
 	o.SetDisp(s.DisplayObjective)
 	o.SetInit(s.InitialObjective)
 	o.SetRelTol(s.ObjectiveRelativeTolerance)
-	o.SetAbsTol(s.ObjectiveAbsoluteTolerance)
 	o.SetSaveHist(s.KeepObjectiveHistory)
 }
 
 // SetResult sets the optimum value, and resets the initial value to NaN
 func (o *Objective) Result() *ObjectiveResult {
-	o.Float.SetResult()
 	return &ObjectiveResult{
-		ObjectiveHistory: o.Float.Hist(),
-		Objective:        o.Float.Opt(),
+		ObjectiveHistory: o.Floats.Hist(),
+		Objective:        o.Floats.Opt(),
 	}
 }
 

@@ -52,8 +52,9 @@ type GradientSettings struct {
 
 func NewGradientSettings() *GradientSettings {
 	return &GradientSettings{
-		InitialGradient: math.NaN(),
-		DisplayGradient: true,
+		InitialGradient:           math.NaN(),
+		DisplayGradient:           true,
+		GradientAbsoluteTolerance: status.DefaultGradAbsTol,
 	}
 }
 

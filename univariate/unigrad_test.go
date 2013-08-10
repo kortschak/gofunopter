@@ -52,7 +52,8 @@ func SisoGradBasedTest(t *testing.T, opter UniGradOptimizer) {
 		c := result.Status
 
 		if c == status.Continue {
-			t.Errorf("Finished optimizing without error and status is nil")
+			fmt.Println(c)
+			t.Errorf("Finished optimizing without error and status is continue")
 			continue
 		}
 		if c != status.GradAbsTol {

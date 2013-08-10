@@ -64,30 +64,31 @@ func OptimizeGrad(function optimize.MultiObjGrad, initialLocation []float64, set
 	m.optimizer = optimizer
 
 	m.loc.SetInit(initialLocation)
-	c, err := optimize.OptimizeOpter(m, function)
-	m.result.Status = c
-	return m.obj.Opt(), m.loc.Opt(), m.result, err
+	err = optimize.OptimizeOpter(m, function)
+
+	return m.obj.Opt(), m.loc.Opt(), m.Result(), err
 }
 
 type MultiGradResult struct {
-	Status status.Status
 	*common.CommonResult
 	*uni.ObjectiveResult
+	*multi.GradientResult
+	*multi.LocationResult
 }
 
 type MultiGradSettings struct {
 	*common.CommonSettings
 	*uni.ObjectiveSettings
-	InitialGradient           []float64
-	GradientAbsoluteTolerance float64
+	*multi.GradientSettings
+	*multi.LocationSettings
 }
 
 func NewMultiGradSettings() *MultiGradSettings {
 	return &MultiGradSettings{
-		CommonSettings:            common.NewCommonSettings(),
-		ObjectiveSettings:         uni.NewObjectiveSettings(),
-		InitialGradient:           nil,
-		GradientAbsoluteTolerance: 1e-6,
+		CommonSettings:    common.NewCommonSettings(),
+		ObjectiveSettings: uni.NewObjectiveSettings(),
+		GradientSettings:  multi.NewGradientSettings(),
+		LocationSettings:  multi.NewLocationSettings(),
 	}
 }
 
@@ -144,15 +145,17 @@ func (m *multiGradStruct) AddToDisplay(d []*display.Struct) []*display.Struct {
 }
 
 func (m *multiGradStruct) Result() *MultiGradResult {
-	return &MultiGradResult{
+	r := &MultiGradResult{
 		CommonResult:    m.OptCommon.CommonResult(),
 		ObjectiveResult: m.obj.Result(),
+		GradientResult:  m.grad.Result(),
+		LocationResult:  m.loc.Result(),
 	}
+	return r
 }
 
-func (m *multiGradStruct) SetResult(c *common.CommonResult) {
+func (m *multiGradStruct) SetResult() {
 	optimize.SetResult(m.loc, m.grad, m.obj)
-	//m.result.CommonResult = c
 
 	setResulter, ok := m.optimizer.(optimize.SetResulter)
 	if ok {
