@@ -1,8 +1,8 @@
 package common
 
 import (
-	"github.com/btracey/gofunopter/common/convergence"
 	"github.com/btracey/gofunopter/common/display"
+	"github.com/btracey/gofunopter/common/status"
 )
 
 // A Incrementor is a type for incrementing a value. Has methods for testing
@@ -11,14 +11,14 @@ type Incrementor struct {
 	max   int // Maximum allowable value of the Incrementor
 	curr  int // current value of the Incrementor
 	total int // Total number at the end of the optimization run
-	conv  convergence.Type
+	conv  status.Status
 	name  string
 	disp  bool
 }
 
 // No Incrementor iterate method because we don't know how many we want to add on each iteration
 
-func NewIncrementor(name string, max int, conv convergence.Type, disp bool) *Incrementor {
+func NewIncrementor(name string, max int, conv status.Status, disp bool) *Incrementor {
 	return &Incrementor{
 		name: name,
 		max:  max,
@@ -41,11 +41,11 @@ func (i *Incrementor) AddToDisplay(d []*display.Struct) []*display.Struct {
 
 // Converged checks if the value of the Incrementor is greater
 // than the maximum set value
-func (i *Incrementor) Converged() convergence.Type {
+func (i *Incrementor) Status() status.Status {
 	if i.curr >= i.max {
 		return i.conv
 	}
-	return nil
+	return status.Continue
 }
 
 // Curr returns the current value of the Incrementor

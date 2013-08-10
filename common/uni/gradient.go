@@ -1,8 +1,8 @@
 package uni
 
 import (
-	"github.com/btracey/gofunopter/common/convergence"
 	"github.com/btracey/gofunopter/common/display"
+	"github.com/btracey/gofunopter/common/status"
 	"math"
 
 	//"fmt"
@@ -13,16 +13,16 @@ import (
 // The default is for the initial value to be NaN, which can be set
 // by the user with Init.
 // The gradient can converge in two ways:
-// 1) If the norm of the gradient is less than absTol. Returns convergence.GradAbsTol
+// 1) If the norm of the gradient is less than absTol. Returns status.GradAbsTol
 // 2) If ratio of the current norm of the gradient divided by the initial norm
-// of the gradient is less than relTol. Returns convergence.GradRelTol.
+// of the gradient is less than relTol. Returns status.GradRelTol.
 // Default is to converge at the norm of the gradient less than 1E-6
 // The optimizer should check if the initial value is NaN and call the user-defined
 // function at the initial location if necessary.
 type Gradient struct {
 	*Float
-	*convergence.Abs
-	*convergence.Rel
+	*status.Abs
+	*status.Rel
 
 	absCurr float64
 	absInit float64
@@ -36,8 +36,8 @@ type Gradient struct {
 func NewGradient() *Gradient {
 	g := &Gradient{
 		Float: NewFloat("Grad", true),
-		Abs:   convergence.NewAbs(convergence.DefaultGradAbsTol, convergence.GradAbsTol),
-		Rel:   convergence.NewRel(0, convergence.GradRelTol),
+		Abs:   status.NewAbs(status.DefaultGradAbsTol, status.GradAbsTol),
+		Rel:   status.NewRel(0, status.GradRelTol),
 	}
 	return g
 }
@@ -65,15 +65,15 @@ func (g *Gradient) SetCurr(val float64) {
 }
 
 // Converged tests if either the absolute norm or the relative norm have converged
-func (g *Gradient) Converged() convergence.Type {
+func (g *Gradient) Status() status.Status {
 	// Test absolute convergence
-	c := g.Abs.CheckConvergence(g.absCurr)
-	if c != nil {
+	c := g.Abs.Status(g.absCurr)
+	if c != status.Continue {
 		return c
 	}
 	// Test relative convergence
-	c = g.Rel.CheckConvergence(g.absCurr, g.absInit)
-	if c != nil {
+	c = g.Rel.Status(g.absCurr, g.absInit)
+	if c != status.Continue {
 		return c
 	}
 	return c

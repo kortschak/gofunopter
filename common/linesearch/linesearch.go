@@ -5,8 +5,8 @@ import (
 	"github.com/gonum/floats"
 
 	//"gofunopter/common"
-	"github.com/btracey/gofunopter/common/convergence"
 	"github.com/btracey/gofunopter/common/optimize"
+	"github.com/btracey/gofunopter/common/status"
 	"github.com/btracey/gofunopter/common/uni"
 	"github.com/btracey/gofunopter/univariate"
 
@@ -58,9 +58,9 @@ func (l *linesearchFun) ObjGrad(step float64) (f float64, g float64, err error) 
 	return f, g, nil
 }
 
-func (l *linesearchFun) Converged() convergence.Type {
+func (l *linesearchFun) Status() status.Status {
 	// Set the function and gradient values for the line searcher
-	return l.wolfe.Converged()
+	return l.wolfe.Status()
 }
 
 type LinesearchMethod interface {
@@ -68,7 +68,7 @@ type LinesearchMethod interface {
 	Step() *uni.BoundedStep
 }
 
-// Linesearch performs a linesearch. Optimizer should turn off all non-wolfe convergence patterns for the gradient and step
+// Linesearch performs a linesearch. Optimizer should turn off all non-wolfe status patterns for the gradient and step
 func Linesearch(multifun optimize.MultiObjGrad, method LinesearchMethod, settings *univariate.UniGradSettings, wolfe WolfeConditioner, searchVector []float64, initLoc []float64, initObj float64, initGrad []float64) (*LinesearchResult, error) {
 
 	// Linesearch modifies the values of the slices, but should revert the changes by the end
@@ -107,7 +107,7 @@ func Linesearch(multifun optimize.MultiObjGrad, method LinesearchMethod, setting
 
 	// Run optimization, initial location is zero
 	optVal, optLoc, result, err := univariate.OptimizeGrad(fun, 0, settings, method)
-	//convergence, err := optimize.OptimizeOpter(method, fun)
+	//status, err := optimize.OptimizeOpter(method, fun)
 
 	// Regerate results structure (do this before returning error in case optimizer can recover from it)
 	// need to scale alpha_k because linesearch is x_k + alpha_k p_k
@@ -122,18 +122,17 @@ func Linesearch(multifun optimize.MultiObjGrad, method LinesearchMethod, setting
 		fmt.Println("Error in linsearch")
 		return r, errors.New("linesearch: error during linesearch optimization: " + err.Error())
 	}
-	conv := result.Convergence
-	// Check to make sure that the convergence due to wolfe convergence
-	_, ok := conv.(WolfeConvergence)
-	if !ok {
-		// If the convergence wasn't because of wolfe conditions, see if they are met anyway
-		c := wolfe.Converged()
-		if c != nil {
+	stat := result.Status
+	// Check to make sure that the status due to wolfe status
+	if stat != status.WolfeConditionsMet {
+		// If the status wasn't because of wolfe conditions, see if they are met anyway
+		c := wolfe.Status()
+		if c == status.WolfeConditionsMet {
 			// Conditions met, no problem
 			return r, nil
 		}
 		// Conditions not met
-		return r, errors.New("linesearch: convergence not because of wolfe conditions. instead: " + c.Convergence())
+		return r, errors.New("linesearch: status not because of wolfe conditions.")
 	}
 	return r, nil
 }

@@ -3,10 +3,10 @@ package multivariate
 import (
 	"github.com/btracey/gofunopter/common"
 	//"github.com/btracey/gofunopter/common/multi"
-	"github.com/btracey/gofunopter/common/convergence"
 	"github.com/btracey/gofunopter/common/display"
 	"github.com/btracey/gofunopter/common/multi"
 	"github.com/btracey/gofunopter/common/optimize"
+	"github.com/btracey/gofunopter/common/status"
 	"github.com/btracey/gofunopter/common/uni"
 
 	"errors"
@@ -44,7 +44,7 @@ func (m *moddedFun) ObjGrad(x []float64) (obj float64, grad []float64, err error
 
 type MultiGradOptimizer interface {
 	Initialize(loc *multi.Location, obj *uni.Objective, grad *multi.Gradient) error
-	Iterate(loc *multi.Location, obj *uni.Objective, grad *multi.Gradient, fun optimize.MultiObjGrad) error
+	Iterate(loc *multi.Location, obj *uni.Objective, grad *multi.Gradient, fun optimize.MultiObjGrad) (status.Status, error)
 }
 
 func OptimizeGrad(function optimize.MultiObjGrad, initialLocation []float64, settings *MultiGradSettings, optimizer MultiGradOptimizer) (optValue float64, optLocation []float64, result *MultiGradResult, err error) {
@@ -65,12 +65,12 @@ func OptimizeGrad(function optimize.MultiObjGrad, initialLocation []float64, set
 
 	m.loc.SetInit(initialLocation)
 	c, err := optimize.OptimizeOpter(m, function)
-	m.result.Convergence = c
+	m.result.Status = c
 	return m.obj.Opt(), m.loc.Opt(), m.result, err
 }
 
 type MultiGradResult struct {
-	Convergence convergence.Type
+	Status status.Status
 	*common.CommonResult
 }
 
@@ -133,8 +133,8 @@ func (m *multiGradStruct) SetSettings() error {
 	return nil
 }
 
-func (m *multiGradStruct) Converged() convergence.Type {
-	return convergence.CheckConvergence(m.obj, m.grad)
+func (m *multiGradStruct) Status() status.Status {
+	return status.CheckStatus(m.obj, m.grad)
 }
 
 func (m *multiGradStruct) AddToDisplay(d []*display.Struct) []*display.Struct {
@@ -186,6 +186,6 @@ func (m *multiGradStruct) Initialize() error {
 	return nil
 }
 
-func (m *multiGradStruct) Iterate() (err error) {
+func (m *multiGradStruct) Iterate() (status.Status, error) {
 	return m.optimizer.Iterate(m.loc, m.obj, m.grad, m.fun)
 }

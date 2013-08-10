@@ -1,4 +1,4 @@
-package convergence
+package status
 
 const DefaultGradAbsTol = 1E-6
 const DefaultStepAbsTol = 1E-15 // any smaller and numerical issues happen
@@ -7,10 +7,10 @@ const DefaultStepAbsTol = 1E-15 // any smaller and numerical issues happen
 // Converges if curr < tol
 type Abs struct {
 	tol  float64
-	conv Type
+	conv Status
 }
 
-func NewAbs(tol float64, conv Type) *Abs {
+func NewAbs(tol float64, conv Status) *Abs {
 	return &Abs{tol: tol, conv: conv}
 }
 
@@ -25,21 +25,21 @@ func (a *Abs) SetAbsTol(tol float64) {
 }
 
 // CheckConvergence checks if the absolute tolerance has been reached
-func (a *Abs) CheckConvergence(curr float64) Type {
+func (a *Abs) Status(curr float64) Status {
 	if curr < a.tol {
 		return a.conv
 	}
-	return nil
+	return Continue
 }
 
 // RelTol is a structure for representing an absolute tolerance.
 // Converges if curr < tol * init
 type Rel struct {
 	tol  float64
-	conv Type
+	conv Status
 }
 
-func NewRel(tol float64, conv Type) *Rel {
+func NewRel(tol float64, conv Status) *Rel {
 	return &Rel{tol: tol, conv: conv}
 }
 
@@ -54,9 +54,9 @@ func (r *Rel) SetRelTol(tol float64) {
 }
 
 // CheckConvergence checks if the relative tolerance has been reached
-func (r *Rel) CheckConvergence(curr, init float64) Type {
+func (r *Rel) Status(curr, init float64) Status {
 	if curr < r.tol*init {
 		return r.conv
 	}
-	return nil
+	return Continue
 }

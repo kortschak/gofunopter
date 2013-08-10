@@ -1,7 +1,7 @@
 package multi
 
 import (
-	"github.com/btracey/gofunopter/common/convergence"
+	"github.com/btracey/gofunopter/common/status"
 	"github.com/gonum/floats"
 	"math"
 )
@@ -12,33 +12,33 @@ import (
 // It has two different ways it can converge.
 // 1) If the function value
 // is below absTol (defaulted to negative infinity), it will converge
-// with convergence.ObjAbsTol.
+// with status.ObjAbsTol.
 // 2) If the last change in the function value divided by the first
 // change in the function value is less than relTol, it will converge
-// with convergence.ObjRelTol. Default is relTol = 0
+// with status.ObjRelTol. Default is relTol = 0
 // The defaults are so that the default case is to drive the gradient
-// to convergence
+// to status
 // For optimizers:
 // The initial value is defaulted to nil. The optimizer should test
 // if the initial value has been set by the user, otherwise the
 // optimizer should evaluate the function at the initial location.
 type Objective struct {
 	*Floats
-	//*convergence.Abs
-	*convergence.Rel
+	//*status.Abs
+	*status.Rel
 
 	delta     float64
 	initDelta float64 // initial change off of which the delta is based
-	relconv   convergence.Type
-	absconv   convergence.Type
+	relconv   status.Status
+	absconv   status.Status
 }
 
 // NewObjective returns the default objective structure
 func NewObjective() *Objective {
 	o := &Objective{
 		Floats: NewFloat("Obj", true),
-		//Abs:    convergence.NewAbs(math.Inf(-1), convergence.ObjAbsTol),
-		Rel: convergence.NewRel(0, convergence.ObjRelTol),
+		//Abs:    status.NewAbs(math.Inf(-1), status.ObjAbsTol),
+		Rel: status.NewRel(0, status.ObjRelTol),
 	}
 	return o
 }
@@ -62,12 +62,12 @@ func (o *Objective) SetCurr(f []float64) {
 }
 
 // Converged tests if either AbsTol or RelTol have converged
-func (o *Objective) Converged() convergence.Type {
-	// Test absolute convergence
+func (o *Objective) Status() status.Status {
+	// Test absolute status
 	//c := o.Abs.CheckConvergence(o.norm)
 	//if c != nil {
 	//	return c
 	//}
-	// Test relative convergence
-	return o.Rel.CheckConvergence(o.delta, o.initDelta)
+	// Test relative status
+	return o.Rel.Status(o.delta, o.initDelta)
 }

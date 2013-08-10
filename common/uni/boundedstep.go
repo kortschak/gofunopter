@@ -2,8 +2,8 @@ package uni
 
 import (
 	"errors"
-	"github.com/btracey/gofunopter/common/convergence"
 	"github.com/btracey/gofunopter/common/display"
+	"github.com/btracey/gofunopter/common/status"
 	"math"
 )
 
@@ -12,7 +12,7 @@ import (
 // between the upper and lower bounds
 type BoundedStep struct {
 	*Float
-	*convergence.Abs
+	*status.Abs
 
 	lb      float64
 	ub      float64
@@ -23,7 +23,7 @@ type BoundedStep struct {
 func NewBoundedStep() *BoundedStep {
 	b := &BoundedStep{
 		Float: NewFloat("step", false),
-		Abs:   convergence.NewAbs(convergence.DefaultStepAbsTol, convergence.StepAbsTol),
+		Abs:   status.NewAbs(status.DefaultStepAbsTol, status.StepAbsTol),
 		lb:    0,
 		ub:    math.Inf(1),
 	}
@@ -92,6 +92,6 @@ func (b *BoundedStep) WithinBounds(val float64) bool {
 	return true
 }
 
-func (b *BoundedStep) Converged() convergence.Type {
-	return b.Abs.CheckConvergence(b.gap)
+func (b *BoundedStep) Status() status.Status {
+	return b.Abs.Status(b.gap)
 }

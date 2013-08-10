@@ -5,16 +5,16 @@ package optimize
 import (
 	"errors"
 	"github.com/btracey/gofunopter/common"
-	"github.com/btracey/gofunopter/common/convergence"
 	"github.com/btracey/gofunopter/common/display"
+	"github.com/btracey/gofunopter/common/status"
 )
 
 type Optimizer interface {
 	Initializer
 	//SetResulter
-	convergence.Converger
+	status.Statuser
 	display.Displayer
-	Iterate() error
+	Iterate() (status.Status, error)
 	GetOptCommon() *common.OptCommon
 	SetSettings() error
 	CommonSettings() *common.CommonSettings
@@ -23,7 +23,7 @@ type Optimizer interface {
 
 // OptimizeOpter is the basic method for using optimizers. Not intended to
 // be called by the user
-func OptimizeOpter(o Optimizer, fun interface{}) (convergence.Type, error) {
+func OptimizeOpter(o Optimizer, fun interface{}) (status.Status, error) {
 	var err error
 	// Set all the settings
 	commonSettings := o.CommonSettings()
@@ -39,7 +39,7 @@ func OptimizeOpter(o Optimizer, fun interface{}) (convergence.Type, error) {
 	if ok {
 		err = initer.Initialize()
 		if err != nil {
-			return nil, errors.New("opt: error during user defined function initialization: " + err.Error())
+			return status.UserFunctionError, errors.New("opt: error during user defined function initialization: " + err.Error())
 		}
 	}
 	common.CommonInitialize()
@@ -47,7 +47,7 @@ func OptimizeOpter(o Optimizer, fun interface{}) (convergence.Type, error) {
 	// Initialize the optimizer
 	err = o.Initialize()
 	if err != nil {
-		return nil, errors.New("opt: error during optimizer initialization, " + err.Error())
+		return status.UserFunctionError, errors.New("opt: error during optimizer initialization, " + err.Error())
 	}
 
 	// Get the displayer
@@ -64,32 +64,32 @@ func OptimizeOpter(o Optimizer, fun interface{}) (convergence.Type, error) {
 	//defer common.CommonSetResult()
 
 	// Main optimization loop:
-	// Iterate until convergence, outputting the display as we go (assuming)
+	// Iterate until status, outputting the display as we go (assuming)
 	// appropriate booleans are true
 
-	converger, isConverger := fun.(convergence.Converger)
+	statuser, isStatuser := fun.(status.Statuser)
 	displayer, isDisplayer := fun.(display.Displayer)
 
-	var c convergence.Type
+	var c status.Status
 	for {
 		// Check if the optimizer has converged
-		c = o.Converged()
+		c = o.Status()
 
-		if c != nil {
+		if c != status.Continue {
 			break
 		}
 
 		// Check if the user-defined function has converged
-		if isConverger {
-			c = converger.Converged()
-			if c != nil {
+		if isStatuser {
+			c = statuser.Status()
+			if c != status.Continue {
 				break
 			}
 		}
 
 		// Check if common has converged (iterations, funevals, etc.)
-		c = common.CommonConverged()
-		if c != nil {
+		c = common.CommonStatus()
+		if c != status.Continue {
 			break
 		}
 
@@ -98,13 +98,12 @@ func OptimizeOpter(o Optimizer, fun interface{}) (convergence.Type, error) {
 
 		// If the optimizer has not converged, take an iteration
 		// in the optimizer
-		err := o.Iterate()
+		// Optimizer will return an error and a status. Status should equal
+		// status.Continue unless there is an error
+		stat, err := o.Iterate()
 		common.Iter.Add(1)
-
-		// Function evaluations and history dealt with locally
-
-		if err != nil {
-			return nil, errors.New("opt: Error during optimizer iteration, " + err.Error())
+		if stat != status.Continue {
+			return stat, err
 		}
 	}
 	// Display at end of optimization

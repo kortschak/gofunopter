@@ -1,8 +1,8 @@
 package univariate
 
 import (
-	"github.com/btracey/gofunopter/common/convergence"
 	"github.com/btracey/gofunopter/common/optimize"
+	"github.com/btracey/gofunopter/common/status"
 
 	"fmt"
 	"math"
@@ -49,14 +49,14 @@ func SisoGradBasedTest(t *testing.T, opter UniGradOptimizer) {
 			continue
 		}
 
-		c := result.Convergence
+		c := result.Status
 
-		if c == nil {
-			t.Errorf("Finished optimizing without error and convergence is nil")
+		if c == status.Continue {
+			t.Errorf("Finished optimizing without error and status is nil")
 			continue
 		}
-		if c.Convergence() != convergence.GradAbsTol.Convergence() {
-			t.Errorf("For function " + fun.Name() + " convergence is not GradAbsTol. It is instead " + c.Convergence())
+		if c != status.GradAbsTol {
+			t.Errorf("For function " + fun.Name() + " status is not GradAbsTol")
 			continue
 		}
 		if math.Abs(optVal-fun.OptVal()) > SISO_TOLERANCE {
@@ -88,8 +88,8 @@ func SisoGradBasedTest(t *testing.T, opter UniGradOptimizer) {
 			t.Errorf("For function " + fun.Name() + "Different number of fun evals second time")
 		}
 
-		if result.Convergence.Convergence() != convergence.GradAbsTol.Convergence() {
-			t.Errorf("For function " + fun.Name() + " convergence is not GradAbsTol second time")
+		if result.Status != status.GradAbsTol {
+			t.Errorf("For function " + fun.Name() + " status is not GradAbsTol second time")
 		}
 
 		if result.Iterations != firstNIterations {

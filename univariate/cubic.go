@@ -2,8 +2,8 @@ package univariate
 
 import (
 	"errors"
-	"github.com/btracey/gofunopter/common/convergence"
 	"github.com/btracey/gofunopter/common/optimize"
+	"github.com/btracey/gofunopter/common/status"
 	"github.com/btracey/gofunopter/common/uni"
 	"math"
 
@@ -68,15 +68,15 @@ func (c *Cubic) Initialize(loc *uni.Location, obj *uni.Objective, grad *uni.Grad
 	return nil
 }
 
-func (c *Cubic) Converged() convergence.Type {
-	return convergence.CheckConvergence(c.step)
+func (c *Cubic) Status() status.Status {
+	return status.CheckStatus(c.step)
 }
 
 func (c *Cubic) SetResult() {
 	optimize.SetResult(c.step)
 }
 
-func (cubic *Cubic) Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gradient, fun optimize.UniObjGrad) (err error) {
+func (cubic *Cubic) Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gradient, fun optimize.UniObjGrad) (status.Status, error) {
 	// Initialize
 	var stepMultiplier float64
 	updateCurrPoint := false
@@ -99,7 +99,7 @@ func (cubic *Cubic) Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gra
 	*/
 	trialF, trialG, err := fun.ObjGrad(trialX)
 	if err != nil {
-		return errors.New("gofunopter: cubic: user defined function error: " + err.Error())
+		return status.UserFunctionError, errors.New("gofunopter: cubic: user defined function error: " + err.Error())
 	}
 
 	var newStepSize float64
@@ -325,7 +325,7 @@ func (cubic *Cubic) Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gra
 		}
 	}
 	cubic.step.SetCurr(newStepSize)
-	return nil
+	return status.Continue, nil
 }
 
 func (c *Cubic) unclearStepIncrease(currLoc float64) float64 {

@@ -4,8 +4,8 @@
 package common
 
 import (
-	"github.com/btracey/gofunopter/common/convergence"
 	"github.com/btracey/gofunopter/common/display"
+	"github.com/btracey/gofunopter/common/status"
 	"math"
 	"time"
 )
@@ -93,8 +93,8 @@ func (c *OptCommon) GetOptCommon() *OptCommon {
 }
 
 // CommonConverged checks if any of the elements of common have converged
-func (c *OptCommon) CommonConverged() convergence.Type {
-	return convergence.CheckConvergence(c.Iter, c.FunEvals, c.Time)
+func (c *OptCommon) CommonStatus() status.Status {
+	return status.CheckStatus(c.Iter, c.FunEvals, c.Time)
 }
 
 // CommonInitialize initializes the elements of the common structure at the start of a run.
@@ -124,7 +124,7 @@ type Iterations struct {
 
 func NewIterations() *Iterations {
 	return &Iterations{
-		Incrementor: NewIncrementor("Iter", math.MaxInt32-1, convergence.Iterations, true),
+		Incrementor: NewIncrementor("Iter", math.MaxInt32-1, status.MaximumIterations, true),
 	}
 }
 
@@ -144,7 +144,7 @@ type FunctionEvaluations struct {
 
 func NewFunctionEvaluations() *FunctionEvaluations {
 	return &FunctionEvaluations{
-		Incrementor: NewIncrementor("FunEval", math.MaxInt32-1, convergence.FunEvals, true),
+		Incrementor: NewIncrementor("FunEval", math.MaxInt32-1, status.MaximumFunctionEvaluations, true),
 	}
 }
 
@@ -179,13 +179,13 @@ func (t *Time) AddToDisplay(d []*display.Struct) []*display.Struct {
 	return d
 }
 
-// Converged returns a convergence if the elapsed run time is
+// Converged returns a status if the elapsed run time is
 // longer than the maximum allowed
-func (t *Time) Converged() convergence.Type {
+func (t *Time) Status() status.Status {
 	if time.Since(t.init) > t.max {
-		return convergence.Time
+		return status.MaximumRuntime
 	}
-	return nil
+	return status.Continue
 }
 
 func (t *Time) Disp() bool {

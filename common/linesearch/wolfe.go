@@ -1,13 +1,13 @@
 package linesearch
 
 import (
-	"github.com/btracey/gofunopter/common/convergence"
+	"github.com/btracey/gofunopter/common/status"
 	"math"
 )
 
 // WolfeConditioner is an iterface for wolfe conditions (strong or weak)
 type WolfeConditioner interface {
-	Converged() convergence.Type
+	Status() status.Status
 	FunConst() float64
 	GradConst() float64
 	SetFunConst(funConst float64)
@@ -15,10 +15,6 @@ type WolfeConditioner interface {
 	SetInitState(initObj, initGrad float64)
 	SetCurrState(currObj, currGrad, step float64)
 }
-
-// WolfeConvergence is a type for checking that the
-// wolfe conditions have been satisfied
-type WolfeConvergence struct{ convergence.Basic }
 
 type WeakWolfeConditions struct {
 	funConst  float64
@@ -47,14 +43,14 @@ func (w *WeakWolfeConditions) SetCurrState(currObj, currGrad, currStep float64) 
 }
 
 //func (s *WeakWolfeConditions) WolfeConditionsMet(obj, directionalderivative, step float64) bool {
-func (w *WeakWolfeConditions) Converged() convergence.Type {
+func (w *WeakWolfeConditions) Status() status.Status {
 	if w.currObj >= w.initObj+w.funConst*w.step*w.currGrad {
-		return nil
+		return status.Continue
 	}
 	if w.currGrad <= w.gradConst*w.initGrad {
-		return nil
+		return status.Continue
 	}
-	return WolfeConvergence{Basic: convergence.Basic{"Weak Wolfe conditions met"}}
+	return status.WolfeConditionsMet
 }
 
 func (w *WeakWolfeConditions) SetFunConst(val float64) {
@@ -115,12 +111,12 @@ func (s *StrongWolfeConditions) GradConst() float64 {
 	return s.gradConst
 }
 
-func (s *StrongWolfeConditions) Converged() convergence.Type {
+func (s *StrongWolfeConditions) Status() status.Status {
 	if s.currObj >= s.initObj+s.funConst*s.step*s.currGrad {
-		return nil
+		return status.Continue
 	}
 	if math.Abs(s.currGrad) >= s.gradConst*math.Abs(s.initGrad) {
-		return nil
+		return status.Continue
 	}
-	return WolfeConvergence{Basic: convergence.Basic{"Strong Wolfe conditions met"}}
+	return status.WolfeConditionsMet
 }

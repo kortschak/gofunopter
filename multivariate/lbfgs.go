@@ -4,6 +4,7 @@ import (
 	"github.com/btracey/gofunopter/common/linesearch"
 	"github.com/btracey/gofunopter/common/multi"
 	"github.com/btracey/gofunopter/common/optimize"
+	"github.com/btracey/gofunopter/common/status"
 	"github.com/btracey/gofunopter/common/uni"
 	"github.com/btracey/gofunopter/univariate"
 
@@ -64,11 +65,11 @@ func (lbfgs *Lbfgs) SetResult() {
 	optimize.SetResult(lbfgs.step)
 }
 
-func (lbfgs *Lbfgs) Initialize(loc *multi.Location, obj *uni.Objective, grad *multi.Gradient) (err error) {
+func (lbfgs *Lbfgs) Initialize(loc *multi.Location, obj *uni.Objective, grad *multi.Gradient) error {
 	lbfgs.nDim = len(loc.Init())
 
 	// Now initialize the three to set the initial location to the current location
-	err = optimize.Initialize(lbfgs.step)
+	err := optimize.Initialize(lbfgs.step)
 	if err != nil {
 		return errors.New("lbfgs: error initializing: " + err.Error())
 	}
@@ -98,7 +99,7 @@ func (lbfgs *Lbfgs) Initialize(loc *multi.Location, obj *uni.Objective, grad *mu
 	return nil
 }
 
-func (lbfgs *Lbfgs) Iterate(loc *multi.Location, obj *uni.Objective, grad *multi.Gradient, fun optimize.MultiObjGrad) error {
+func (lbfgs *Lbfgs) Iterate(loc *multi.Location, obj *uni.Objective, grad *multi.Gradient, fun optimize.MultiObjGrad) (status.Status, error) {
 	counter := lbfgs.counter
 	q := lbfgs.q
 	a := lbfgs.a
@@ -161,7 +162,7 @@ func (lbfgs *Lbfgs) Iterate(loc *multi.Location, obj *uni.Objective, grad *multi
 
 	// In the future add a check to switch to a different linesearcher?
 	if err != nil {
-		return err
+		return status.LinesearchFailure, err
 	}
 	x_kp1 := linesearchResult.Loc
 	f_kp1 := linesearchResult.Obj
@@ -197,5 +198,5 @@ func (lbfgs *Lbfgs) Iterate(loc *multi.Location, obj *uni.Objective, grad *multi
 	if lbfgs.counter == lbfgs.NumStore {
 		lbfgs.counter = 0
 	}
-	return nil
+	return status.Continue, nil
 }

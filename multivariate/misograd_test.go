@@ -1,8 +1,8 @@
 package multivariate
 
 import (
-	"github.com/btracey/gofunopter/common/convergence"
 	"github.com/btracey/gofunopter/common/optimize"
+	"github.com/btracey/gofunopter/common/status"
 
 	"github.com/gonum/floats"
 	"math"
@@ -93,17 +93,17 @@ func MisoGradBasedTest(t *testing.T, opter MultiGradOptimizer) {
 		fmt.Println("Is misograd_test, starting optimizer")
 		//optVal, optLoc, c, err := opter.Optimize(fun, fun.InitLoc)
 		optVal, optLoc, result, err := OptimizeGrad(fun, fun.InitLoc, settings, opter)
-		c := result.Convergence
+		c := result.Status
 		if err != nil {
 			t.Errorf("Error during optimization for function " + fun.name + ": " + err.Error())
 			return
 		}
-		if c == nil {
-			t.Errorf("Finished optimizing without error and convergence is nil")
+		if c == status.Continue {
+			t.Errorf("Finished optimizing without error and status is continue")
 			return
 		}
-		if c.Convergence() != convergence.GradAbsTol.Convergence() {
-			t.Errorf("For function " + fun.name + " convergence is not GradAbsTol. It is instead " + c.Convergence())
+		if c != status.GradAbsTol {
+			t.Errorf("For function " + fun.name + " status is not GradAbsTol.")
 			return
 		}
 		firstObjVal := optVal
@@ -131,8 +131,8 @@ func MisoGradBasedTest(t *testing.T, opter MultiGradOptimizer) {
 			t.Errorf("For function " + fun.name + "Different number of fun evals second time")
 		}
 
-		if result.Convergence.Convergence() != convergence.GradAbsTol.Convergence() {
-			t.Errorf("For function " + fun.name + " convergence is not GradAbsTol second time")
+		if result.Status != status.GradAbsTol {
+			t.Errorf("For function " + fun.name + " status is not GradAbsTol second time")
 		}
 
 		if result.Iterations != firstNIterations {

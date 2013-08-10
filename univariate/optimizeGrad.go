@@ -3,9 +3,9 @@ package univariate
 import (
 	"github.com/btracey/gofunopter/common"
 	//"github.com/btracey/gofunopter/common/multi"
-	"github.com/btracey/gofunopter/common/convergence"
 	"github.com/btracey/gofunopter/common/display"
 	"github.com/btracey/gofunopter/common/optimize"
+	"github.com/btracey/gofunopter/common/status"
 	"github.com/btracey/gofunopter/common/uni"
 
 	"errors"
@@ -41,7 +41,7 @@ func (m *moddedFun) ObjGrad(x float64) (obj float64, grad float64, err error) {
 
 type UniGradOptimizer interface {
 	Initialize(loc *uni.Location, obj *uni.Objective, grad *uni.Gradient) error
-	Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gradient, fun optimize.UniObjGrad) (err error)
+	Iterate(loc *uni.Location, obj *uni.Objective, grad *uni.Gradient, fun optimize.UniObjGrad) (status.Status, error)
 }
 
 func OptimizeGrad(function optimize.UniObjGrad, initialLocation float64, settings *UniGradSettings, optimizer UniGradOptimizer) (optValue float64, optLocation float64, result *UniGradResult, err error) {
@@ -62,12 +62,12 @@ func OptimizeGrad(function optimize.UniObjGrad, initialLocation float64, setting
 
 	m.loc.SetInit(initialLocation)
 	c, err := optimize.OptimizeOpter(m, function)
-	m.result.Convergence = c
+	m.result.Status = c
 	return m.obj.Opt(), m.loc.Opt(), m.result, err
 }
 
 type UniGradResult struct {
-	Convergence convergence.Type
+	Status status.Status
 	*common.CommonResult
 }
 
@@ -130,8 +130,8 @@ func (m *uniGradStruct) SetSettings() error {
 	return nil
 }
 
-func (m *uniGradStruct) Converged() convergence.Type {
-	return convergence.CheckConvergence(m.obj, m.grad)
+func (m *uniGradStruct) Status() status.Status {
+	return status.CheckStatus(m.obj, m.grad)
 }
 
 func (m *uniGradStruct) AddToDisplay(d []*display.Struct) []*display.Struct {
@@ -183,6 +183,6 @@ func (u *uniGradStruct) Initialize() error {
 	return nil
 }
 
-func (u *uniGradStruct) Iterate() (err error) {
+func (u *uniGradStruct) Iterate() (stat status.Status, err error) {
 	return u.optimizer.Iterate(u.loc, u.obj, u.grad, u.fun)
 }
