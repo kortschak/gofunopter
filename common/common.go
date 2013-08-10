@@ -18,6 +18,7 @@ type OptCommon struct {
 	FunEvals *FunctionEvaluations
 	Time     *Time
 	*display.Display
+	stat status.Status
 }
 
 // CommonSettings is a list of settings for the OptCommon structure
@@ -74,6 +75,7 @@ type CommonResult struct {
 	Iterations          int           // Total number of iterations taken by the optimizer
 	FunctionEvaluations int           // Total number of function evaluations taken by the optimizer
 	Runtime             time.Duration // Total runtime elapsed during the optimization
+	Status              status.Status // How did the optimizer end
 }
 
 // AddToDisplay adds the structures to the display
@@ -104,17 +106,20 @@ func (c *OptCommon) CommonInitialize() {
 	c.Time.Initialize()
 }
 
-// CommonResult sets the results from the
-func (c *OptCommon) CommonResult() *CommonResult {
-	//SetResults(c.iter, c.funEvals, c.runtime)
+func (c *OptCommon) SetResult(s status.Status) {
 	c.Iter.SetResult()
 	c.FunEvals.SetResult()
 	c.Time.SetResult()
+	c.stat = s
+}
 
+// CommonResult sets the results from the
+func (c *OptCommon) CommonResult() *CommonResult {
 	return &CommonResult{
 		Iterations:          c.Iter.Opt(),
 		FunctionEvaluations: c.FunEvals.Opt(),
 		Runtime:             c.Time.Opt(),
+		Status:              c.stat,
 	}
 }
 

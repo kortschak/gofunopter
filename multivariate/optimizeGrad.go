@@ -72,11 +72,12 @@ func OptimizeGrad(function optimize.MultiObjGrad, initialLocation []float64, set
 type MultiGradResult struct {
 	Status status.Status
 	*common.CommonResult
+	*uni.ObjectiveResult
 }
 
 type MultiGradSettings struct {
 	*common.CommonSettings
-	InitialObjective          float64
+	*uni.ObjectiveSettings
 	InitialGradient           []float64
 	GradientAbsoluteTolerance float64
 }
@@ -84,7 +85,7 @@ type MultiGradSettings struct {
 func NewMultiGradSettings() *MultiGradSettings {
 	return &MultiGradSettings{
 		CommonSettings:            common.NewCommonSettings(),
-		InitialObjective:          math.NaN(),
+		ObjectiveSettings:         uni.NewObjectiveSettings(),
 		InitialGradient:           nil,
 		GradientAbsoluteTolerance: 1e-6,
 	}
@@ -142,9 +143,16 @@ func (m *multiGradStruct) AddToDisplay(d []*display.Struct) []*display.Struct {
 	return display.AddToDisplay(d, m.loc, m.obj, m.grad)
 }
 
+func (m *multiGradStruct) Result() *MultiGradResult {
+	return &MultiGradResult{
+		CommonResult:    m.OptCommon.CommonResult(),
+		ObjectiveResult: m.obj.Result(),
+	}
+}
+
 func (m *multiGradStruct) SetResult(c *common.CommonResult) {
 	optimize.SetResult(m.loc, m.grad, m.obj)
-	m.result.CommonResult = c
+	//m.result.CommonResult = c
 
 	setResulter, ok := m.optimizer.(optimize.SetResulter)
 	if ok {

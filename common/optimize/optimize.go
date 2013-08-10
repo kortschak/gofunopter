@@ -7,6 +7,8 @@ import (
 	"github.com/btracey/gofunopter/common"
 	"github.com/btracey/gofunopter/common/display"
 	"github.com/btracey/gofunopter/common/status"
+
+	"fmt"
 )
 
 type Optimizer interface {
@@ -18,12 +20,12 @@ type Optimizer interface {
 	GetOptCommon() *common.OptCommon
 	SetSettings() error
 	CommonSettings() *common.CommonSettings
-	SetResult(*common.CommonResult)
+	SetResult()
 }
 
 // OptimizeOpter is the basic method for using optimizers. Not intended to
 // be called by the user
-func OptimizeOpter(o Optimizer, fun interface{}) (status.Status, error) {
+func OptimizeOpter(o Optimizer, fun interface{}) error {
 	var err error
 	// Set all the settings
 	commonSettings := o.CommonSettings()
@@ -34,12 +36,17 @@ func OptimizeOpter(o Optimizer, fun interface{}) (status.Status, error) {
 
 	o.SetSettings()
 
+	var s *status.Status
+	var c status.Status
+	defer SetOptResults(o, common, fun, s)
 	// Initialize the caller's function if it is an initializer
 	initer, ok := fun.(Initializer)
 	if ok {
 		err = initer.Initialize()
 		if err != nil {
-			return status.UserFunctionError, errors.New("opt: error during user defined function initialization: " + err.Error())
+			c = status.UserFunctionError
+			s = &c
+			return errors.New("opt: error during user defined function initialization: " + err.Error())
 		}
 	}
 	common.CommonInitialize()
@@ -47,7 +54,9 @@ func OptimizeOpter(o Optimizer, fun interface{}) (status.Status, error) {
 	// Initialize the optimizer
 	err = o.Initialize()
 	if err != nil {
-		return status.UserFunctionError, errors.New("opt: error during optimizer initialization, " + err.Error())
+		c = status.UserFunctionError
+		s = &c
+		return errors.New("opt: error during optimizer initialization, " + err.Error())
 	}
 
 	// Get the displayer
@@ -59,7 +68,6 @@ func OptimizeOpter(o Optimizer, fun interface{}) (status.Status, error) {
 	// Want to defer call to user-defined set result first to it can unwind after the
 	// optimizer does
 
-	defer SetOptResults(o, common, fun)
 	//defer o.SetResult()
 	//defer common.CommonSetResult()
 
@@ -70,11 +78,12 @@ func OptimizeOpter(o Optimizer, fun interface{}) (status.Status, error) {
 	statuser, isStatuser := fun.(status.Statuser)
 	displayer, isDisplayer := fun.(display.Displayer)
 
-	var c status.Status
 	for {
 		// Check if the optimizer has converged
 		c = o.Status()
-
+		fmt.Println(c)
+		s = &c
+		fmt.Println(s)
 		if c != status.Continue {
 			break
 		}
@@ -89,6 +98,7 @@ func OptimizeOpter(o Optimizer, fun interface{}) (status.Status, error) {
 
 		// Check if common has converged (iterations, funevals, etc.)
 		c = common.CommonStatus()
+		s = &c
 		if c != status.Continue {
 			break
 		}
@@ -101,9 +111,10 @@ func OptimizeOpter(o Optimizer, fun interface{}) (status.Status, error) {
 		// Optimizer will return an error and a status. Status should equal
 		// status.Continue unless there is an error
 		stat, err := o.Iterate()
+		s = &stat
 		common.Iter.Add(1)
 		if stat != status.Continue {
-			return stat, err
+			return err
 		}
 	}
 	// Display at end of optimization
@@ -112,7 +123,7 @@ func OptimizeOpter(o Optimizer, fun interface{}) (status.Status, error) {
 	DisplayOpter(optDisplay, o, common, displayer, isDisplayer)
 	optDisplay.Reset()
 	// SetResult will occur in the unwinding
-	return c, nil
+	return nil
 }
 
 func DisplayOpter(optDisplay *display.Display, o Optimizer, common, displayer display.Displayer, isDisplayer bool) {
@@ -126,9 +137,10 @@ func DisplayOpter(optDisplay *display.Display, o Optimizer, common, displayer di
 	}
 }
 
-func SetOptResults(o Optimizer, c *common.OptCommon, fun interface{}) {
-	commonResult := c.CommonResult()
-	o.SetResult(commonResult)
+func SetOptResults(o Optimizer, c *common.OptCommon, fun interface{}, s *status.Status) {
+	fmt.Println(s)
+	c.SetResult(*s)
+	o.SetResult()
 	setResulter, ok := fun.(SetResulter)
 	if ok {
 		setResulter.SetResult()

@@ -43,9 +43,44 @@ func NewObjective() *Objective {
 	return o
 }
 
-// SetResult sets the optimum value, and resets the initial value to NaN
+type ObjectiveSettings struct {
+	InitialObjective           float64
+	DisplayObjective           bool
+	ObjectiveAbsoluteTolerance float64
+	ObjectiveRelativeTolerance float64
+	KeepObjectiveHistory       bool
+}
+
+func NewObjectiveSettings() *ObjectiveSettings {
+	return &ObjectiveSettings{
+		InitialObjective: math.NaN(),
+		DisplayObjective: true,
+	}
+}
+
+type ObjectiveResult struct {
+	ObjectiveHistory []float64
+	Objective        float64
+}
+
+func (o *Objective) SetSettings(s *ObjectiveSettings) {
+	o.SetInit(s.InitialObjective)
+	o.SetDisp(s.DisplayObjective)
+	o.SetRelTol(s.ObjectiveRelativeTolerance)
+	o.SetAbsTol(s.ObjectiveAbsoluteTolerance)
+	o.SetSaveHist(s.KeepObjectiveHistory)
+}
+
 func (o *Objective) SetResult() {
 	o.Float.SetResult()
+}
+
+// SetResult sets the optimum value, and resets the initial value to NaN
+func (o *Objective) Result() *ObjectiveResult {
+	return &ObjectiveResult{
+		ObjectiveHistory: o.Float.Hist(),
+		Objective:        o.Float.Opt(),
+	}
 }
 
 // SetCurr sets a new value  for the current location and updates the

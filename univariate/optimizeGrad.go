@@ -61,29 +61,29 @@ func OptimizeGrad(function optimize.UniObjGrad, initialLocation float64, setting
 	m.optimizer = optimizer
 
 	m.loc.SetInit(initialLocation)
-	c, err := optimize.OptimizeOpter(m, function)
-	m.result.Status = c
-	return m.obj.Opt(), m.loc.Opt(), m.result, err
+	err = optimize.OptimizeOpter(m, function)
+	//m.result.Status = c
+	return m.obj.Opt(), m.loc.Opt(), m.Result(), err
 }
 
 type UniGradResult struct {
 	Status status.Status
 	*common.CommonResult
+	*uni.ObjectiveResult
+	*uni.GradientResult
 }
 
 type UniGradSettings struct {
 	*common.CommonSettings
-	InitialObjective          float64
-	InitialGradient           float64
-	GradientAbsoluteTolerance float64
+	*uni.GradientSettings
+	*uni.ObjectiveSettings
 }
 
 func NewUniGradSettings() *UniGradSettings {
 	return &UniGradSettings{
-		CommonSettings:            common.NewCommonSettings(),
-		InitialObjective:          math.NaN(),
-		InitialGradient:           math.NaN(),
-		GradientAbsoluteTolerance: 1e-6,
+		CommonSettings:    common.NewCommonSettings(),
+		GradientSettings:  uni.NewGradientSettings(),
+		ObjectiveSettings: uni.NewObjectiveSettings(),
 	}
 }
 
@@ -124,9 +124,11 @@ func (m *uniGradStruct) CommonSettings() *common.CommonSettings {
 }
 
 func (m *uniGradStruct) SetSettings() error {
-	m.grad.SetInit(m.settings.InitialGradient)
-	m.obj.SetInit(m.settings.InitialObjective)
-	m.grad.SetAbsTol(m.settings.GradientAbsoluteTolerance)
+	m.obj.SetSettings(m.settings.ObjectiveSettings)
+	m.grad.SetSettings(m.settings.GradientSettings)
+	//m.grad.SetInit(m.settings.InitialGradient)
+	//m.obj.SetInit(m.settings.InitialObjective)
+	//m.grad.SetAbsTol(m.settings.GradientAbsoluteTolerance)
 	return nil
 }
 
@@ -139,9 +141,17 @@ func (m *uniGradStruct) AddToDisplay(d []*display.Struct) []*display.Struct {
 	return d
 }
 
-func (u *uniGradStruct) SetResult(c *common.CommonResult) {
+func (u *uniGradStruct) Result() *UniGradResult {
+	return &UniGradResult{
+		CommonResult:    u.OptCommon.CommonResult(),
+		ObjectiveResult: u.obj.Result(),
+		GradientResult:  u.grad.Result(),
+	}
+}
+
+func (u *uniGradStruct) SetResult() {
 	optimize.SetResult(u.loc, u.grad, u.obj)
-	u.result.CommonResult = c
+	//u.result.CommonResult = c
 
 	setResulter, ok := u.optimizer.(optimize.SetResulter)
 	if ok {
